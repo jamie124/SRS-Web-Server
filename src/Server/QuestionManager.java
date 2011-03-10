@@ -4,7 +4,7 @@ public class QuestionManager
 {
     UserManager mUserManger;
 
-    Dictionary<Integer, question> mQuestionList;
+    Dictionary<int, question> mQuestionList;
 
     internal Dictionary<int, question> QuestionList
     {

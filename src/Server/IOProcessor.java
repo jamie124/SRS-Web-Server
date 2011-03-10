@@ -1,5 +1,7 @@
 package Server;
 
+import Chat.ChatManager;
+import Chat.ChatMessage;
 import Users.UserManager;
 
     public class IOProcessor
@@ -8,7 +10,7 @@ import Users.UserManager;
         QuestionManager mQuestionManager;
         UserManager mUserManager;
         AnswerManager mAnswerManager;
-        chatMessage mNewChatMessage;
+        ChatMessage mNewChatMessage;
         ChatManager mChatManager;
         Encryption mEncryption;
 

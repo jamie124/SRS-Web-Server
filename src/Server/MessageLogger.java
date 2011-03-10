@@ -2,6 +2,10 @@ package Server;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Queue;
+
+import Chat.ChatMessage;
 
 public class MessageLogger
 {
@@ -19,38 +23,38 @@ public class MessageLogger
     static int MESSAGE_COMMAND = 10;
         
     HashMap<Integer, String> mMessageLog;			// Store all local server messages
-    private Queue mChatMessageQueue;                // Queue to hold messages to be sent
+    private Queue<ChatMessage> mChatMessageQueue;                // Queue to hold messages to be sent
 
     private int mCurrentMessageNo;
     private int mLastMessagePosted;
 
     public MessageLogger()
     {
-        mMessageLog = new Dictionary<int, string>();
+        mMessageLog = new HashMap<Integer, String>();
         //mChatMessageQueue = new List<Message>();
-        mChatMessageQueue = new Queue();
+        mChatMessageQueue = new LinkedList<ChatMessage>();
     }
 
-    public bool IsMessageQueueEmpty()
+    public boolean IsMessageQueueEmpty()
     {
-        if (mChatMessageQueue.Count == 0)
+        if (mChatMessageQueue.size() == 0)
             return true;
         else
             return false;
     }
 
-    // Get any messages in queue and return as a string to be sent to all connected clients
-    public string GetMessagesToSend()
+    // Get any messages in queue and return as a String to be sent to all connected clients
+    public String GetMessagesToSend()
     {
-        string iMessages = "";
-        chatMessage iMessage;
+        String iMessages = "";
+        ChatMessage iMessage;
 
-        if (mChatMessageQueue.Count != 0)
+        if (mChatMessageQueue.size() != 0)
         {
-            for (int i = 0; i <= mChatMessageQueue.Count; i++)
+            for (int i = 0; i <= mChatMessageQueue.size(); i++)
             {
-                iMessage = (chatMessage)mChatMessageQueue.Dequeue();
-                iMessages += iMessage.sUsername + ": " + iMessage.sMessage + "\n";
+                iMessage = (ChatMessage)mChatMessageQueue.poll();
+                iMessages += iMessage.message() + ": " + iMessage.message() + "\n";
             }
         }
         return iMessages;
@@ -61,43 +65,43 @@ public class MessageLogger
     {
         ChatMessage iLastMessage = new ChatMessage();
 
-        iLastMessage = (ChatMessage)mChatMessageQueue.Dequeue();
+        iLastMessage = (ChatMessage)mChatMessageQueue.poll();
 
         return iLastMessage;
     }
 
-    public string DisplayLastMessages()
+    public String DisplayLastMessages()
     {
         int iMessagesToReturn = 0;
-        int iSize = mMessageLog.Count;
-        string iMessages = "";
+        int iSize = mMessageLog.size();
+        String iMessages = "";
 
         iMessagesToReturn = iSize - mLastMessagePosted;
 
         if (iSize == 1)
         {
-            iMessages = mMessageLog[0];
+            iMessages = mMessageLog.get(0);
         }
         else
         {
             for (int i = mLastMessagePosted; i < (mLastMessagePosted + iMessagesToReturn); i++)
             {
-                iMessages += mMessageLog[i];
+                iMessages += mMessageLog.get(i);
                 //mLastMessagePosted++;
             }
         }
 
        
-        LastMessagePosted = iSize;
+        mLastMessagePosted = iSize;
         return iMessages;
     }
 
-    public void NewMessage(string prMessage, int prFlag)
+    public void NewMessage(String prMessage, int prFlag)
     {
-        string iMsgToAdd = "";
+        String iMsgToAdd = "";
         int iIndex = 0;
 
-        iIndex = CurrentMessageNo;
+        iIndex = mCurrentMessageNo;
 
         switch (prFlag)
         {
@@ -135,31 +139,33 @@ public class MessageLogger
 
         // To stop a bug as well as limit log spam a message must not be a duplicate of the message before it
         // Fix at some point to allow for more accurate results
-        string iPreviousMessage;
-        mMessageLog.TryGetValue(iIndex - 1, out iPreviousMessage);
+        String iPreviousMessage = "";
+        if (mMessageLog.containsValue(iIndex - 1))
+        	iPreviousMessage = mMessageLog.get(iIndex - 1);
+        
         if (iPreviousMessage != iMsgToAdd)
         {
-            mMessageLog.Add(iIndex, iMsgToAdd);
-            CurrentMessageNo += 1;
+            mMessageLog.put(iIndex, iMsgToAdd);
+            mCurrentMessageNo += 1;
         }
     }
 
     public void ClearAllMessages()
     {
-        mMessageLog.Clear();
+        mMessageLog.clear();
     }
 
-    public bool IsNewMsgAvailable()
+    public boolean IsNewMsgAvailable()
     {
-        if (mMessageLog.Count() > mLastMessagePosted)
+        if (mMessageLog.size() > mLastMessagePosted)
             return true;
         else
             return false;
     }
 
-    public bool IsLogEmpty()
+    public boolean IsLogEmpty()
     {
-        if (mMessageLog.Count() == 0)
+        if (mMessageLog.size() == 0)
             return true;
         else
             return false;
