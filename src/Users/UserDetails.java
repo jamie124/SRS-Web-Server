@@ -20,61 +20,61 @@ public class UserDetails
     private boolean mQuestionListRequested;
     private boolean mConnected;
     
-	private String username() {
+    public String username() {
 		return mUsername;
 	}
-	private void username(String mUsername) {
+    public void username(String mUsername) {
 		this.mUsername = mUsername;
 	}
-	private String password() {
+    public String password() {
 		return mPassword;
 	}
-	private void password(String mPassword) {
+    public void password(String mPassword) {
 		this.mPassword = mPassword;
 	}
-	private String deviceOS() {
+    public String deviceOS() {
 		return mDeviceOS;
 	}
-	private void deviceOS(String mDeviceOS) {
+    public void deviceOS(String mDeviceOS) {
 		this.mDeviceOS = mDeviceOS;
 	}
-	private String userRole() {
+    public String userRole() {
 		return mUserRole;
 	}
-	private void userRole(String mUserRole) {
+    public void userRole(String mUserRole) {
 		this.mUserRole = mUserRole;
 	}
-	private String userClass() {
+    public String userClass() {
 		return mUserClass;
 	}
-	private void userClass(String mClass) {
+    public void userClass(String mClass) {
 		this.mUserClass = mClass;
 	}
-	private String currQuestionString() {
+    public String currQuestionString() {
 		return mCurrQuestionString;
 	}
-	private void currQuestionString(String mCurrQuestionString) {
+    public void currQuestionString(String mCurrQuestionString) {
 		this.mCurrQuestionString = mCurrQuestionString;
 	}
-	private String chatMessage() {
+    public String chatMessage() {
 		return mChatMessage;
 	}
-	private void chatMessage(String mChatMessage) {
+    public void chatMessage(String mChatMessage) {
 		this.mChatMessage = mChatMessage;
 	}
-	private boolean userListRequested() {
+    public boolean userListRequested() {
 		return mUserListRequested;
 	}
-	private void userListRequested(boolean mUserListRequested) {
+    public void userListRequested(boolean mUserListRequested) {
 		this.mUserListRequested = mUserListRequested;
 	}
-	private boolean questionListRequested() {
+    public boolean questionListRequested() {
 		return mQuestionListRequested;
 	}
-	private void questionListRequested(boolean mQuestionListRequested) {
+    public void questionListRequested(boolean mQuestionListRequested) {
 		this.mQuestionListRequested = mQuestionListRequested;
 	}
-	public Question CurrQuestion() {
+    public Question CurrQuestion() {
 		return mCurrQuestion;
 	}
 	public void CurrQuestion(Question mCurrQuestion) {

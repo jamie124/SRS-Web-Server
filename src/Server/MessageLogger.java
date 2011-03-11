@@ -22,7 +22,7 @@ public class MessageLogger
     static int MESSAGE_ANSWER = 9;
     static int MESSAGE_COMMAND = 10;
         
-    HashMap<Integer, String> mMessageLog;			// Store all local server messages
+    private HashMap<Integer, String> mMessageLog;			// Store all local server messages
     private Queue<ChatMessage> mChatMessageQueue;                // Queue to hold messages to be sent
 
     private int mCurrentMessageNo;
@@ -30,14 +30,14 @@ public class MessageLogger
 
     public MessageLogger()
     {
-        mMessageLog = new HashMap<Integer, String>();
+        messageLog(new HashMap<Integer, String>());
         //mChatMessageQueue = new List<Message>();
-        mChatMessageQueue = new LinkedList<ChatMessage>();
+        chatMessageQueue(new LinkedList<ChatMessage>());
     }
 
     public boolean IsMessageQueueEmpty()
     {
-        if (mChatMessageQueue.size() == 0)
+        if (chatMessageQueue().size() == 0)
             return true;
         else
             return false;
@@ -49,11 +49,11 @@ public class MessageLogger
         String iMessages = "";
         ChatMessage iMessage;
 
-        if (mChatMessageQueue.size() != 0)
+        if (chatMessageQueue().size() != 0)
         {
-            for (int i = 0; i <= mChatMessageQueue.size(); i++)
+            for (int i = 0; i <= chatMessageQueue().size(); i++)
             {
-                iMessage = (ChatMessage)mChatMessageQueue.poll();
+                iMessage = (ChatMessage)chatMessageQueue().poll();
                 iMessages += iMessage.message() + ": " + iMessage.message() + "\n";
             }
         }
@@ -65,7 +65,7 @@ public class MessageLogger
     {
         ChatMessage iLastMessage = new ChatMessage();
 
-        iLastMessage = (ChatMessage)mChatMessageQueue.poll();
+        iLastMessage = (ChatMessage)chatMessageQueue().poll();
 
         return iLastMessage;
     }
@@ -73,20 +73,20 @@ public class MessageLogger
     public String DisplayLastMessages()
     {
         int iMessagesToReturn = 0;
-        int iSize = mMessageLog.size();
+        int iSize = messageLog().size();
         String iMessages = "";
 
         iMessagesToReturn = iSize - mLastMessagePosted;
 
         if (iSize == 1)
         {
-            iMessages = mMessageLog.get(0);
+            iMessages = messageLog().get(0);
         }
         else
         {
             for (int i = mLastMessagePosted; i < (mLastMessagePosted + iMessagesToReturn); i++)
             {
-                iMessages += mMessageLog.get(i);
+                iMessages += messageLog().get(i);
                 //mLastMessagePosted++;
             }
         }
@@ -140,24 +140,24 @@ public class MessageLogger
         // To stop a bug as well as limit log spam a message must not be a duplicate of the message before it
         // Fix at some point to allow for more accurate results
         String iPreviousMessage = "";
-        if (mMessageLog.containsValue(iIndex - 1))
-        	iPreviousMessage = mMessageLog.get(iIndex - 1);
+        if (messageLog().containsValue(iIndex - 1))
+        	iPreviousMessage = messageLog().get(iIndex - 1);
         
         if (iPreviousMessage != iMsgToAdd)
         {
-            mMessageLog.put(iIndex, iMsgToAdd);
+            messageLog().put(iIndex, iMsgToAdd);
             mCurrentMessageNo += 1;
         }
     }
 
     public void ClearAllMessages()
     {
-        mMessageLog.clear();
+        messageLog().clear();
     }
 
     public boolean IsNewMsgAvailable()
     {
-        if (mMessageLog.size() > mLastMessagePosted)
+        if (messageLog().size() > mLastMessagePosted)
             return true;
         else
             return false;
@@ -165,9 +165,25 @@ public class MessageLogger
 
     public boolean IsLogEmpty()
     {
-        if (mMessageLog.size() == 0)
+        if (messageLog().size() == 0)
             return true;
         else
             return false;
     }
+
+    public HashMap<Integer, String> messageLog() {
+		return mMessageLog;
+	}
+
+    public void messageLog(HashMap<Integer, String> mMessageLog) {
+		this.mMessageLog = mMessageLog;
+	}
+
+    public Queue<ChatMessage> chatMessageQueue() {
+		return mChatMessageQueue;
+	}
+
+    public void chatMessageQueue(Queue<ChatMessage> mChatMessageQueue) {
+		this.mChatMessageQueue = mChatMessageQueue;
+	}
 }
