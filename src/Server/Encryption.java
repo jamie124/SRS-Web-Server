@@ -1,79 +1,86 @@
 package Server;
 
-public class Encryption
-{
-    // Encryption functions have been copied and variables renamed from
-    // http://www.codeproject.com/KB/security/DotNetCrypto.aspx
-    private byte[] Encrypt(byte[] prData, byte[] prKey, byte[] prIV)
-    {
-        // Create a MemoryStream to accept the encrypted bytes 
+import java.io.UnsupportedEncodingException;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.KeySpec;
 
-        MemoryStream iStream = new MemoryStream();
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.PBEParameterSpec;
 
-        Rijndael iRijndael = Rijndael.Create();
+public class Encryption {
+	Cipher encrypter;
+	Cipher decrypter;
 
-        iRijndael.Key = prKey;
-        iRijndael.IV = prIV;
+    // 8-byte Salt
+    byte[] salt = {
+        (byte)0xA9, (byte)0x9B, (byte)0xC8, (byte)0x32,
+        (byte)0x56, (byte)0x35, (byte)0xE3, (byte)0x03
+    };
+    
+    // Iteration count
+    int iterationCount = 19;
+    
+	Encryption(String passPhrase) {
+        try {
+            // Create the key
+            KeySpec keySpec = new PBEKeySpec(passPhrase.toCharArray(), salt, iterationCount);
+            SecretKey key = SecretKeyFactory.getInstance(
+                "PBEWithMD5AndDES").generateSecret(keySpec);
+            encrypter = Cipher.getInstance(key.getAlgorithm());
+            decrypter = Cipher.getInstance(key.getAlgorithm());
 
-        CryptoStream iCryptoStream = new CryptoStream(iStream,
-           iRijndael.CreateEncryptor(), CryptoStreamMode.Write);
+            // Prepare the parameter to the ciphers
+            AlgorithmParameterSpec paramSpec = new PBEParameterSpec(salt, iterationCount);
 
-
-        iCryptoStream.Write(prData, 0, prData.Length);
-        iCryptoStream.Close();
-
-        byte[] iEncryptedData = iStream.ToArray();
-
-        return iEncryptedData;
+            // Create the ciphers
+            encrypter.init(Cipher.ENCRYPT_MODE, key, paramSpec);
+            decrypter.init(Cipher.DECRYPT_MODE, key, paramSpec);
+        } catch (java.security.InvalidAlgorithmParameterException e) {
+        } catch (java.security.spec.InvalidKeySpecException e) {
+        } catch (javax.crypto.NoSuchPaddingException e) {
+        } catch (java.security.NoSuchAlgorithmException e) {
+        } catch (java.security.InvalidKeyException e) {
+        }
     }
 
-    public string Encrypt(string prStringToEncrypt, string prPassword)
-    {
+	public String Encrypt(String prStringToEncrypt) {
+		try {
 
-        byte[] iStringBytes = System.Text.Encoding.Unicode.GetBytes(prStringToEncrypt);
+			// Encode the string into bytes using utf-8
+			byte[] utf8 = prStringToEncrypt.getBytes("UTF8");
 
-        PasswordDeriveBytes iPDB = new PasswordDeriveBytes(prPassword,
-            new byte[] {0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 
-        0x65, 0x64, 0x76, 0x65, 0x64, 0x65, 0x76});
+			// Encrypt
+			byte[] enc = encrypter.doFinal(utf8);
 
-        byte[] iEncryptedData = Encrypt(iStringBytes,
-                 iPDB.GetBytes(32), iPDB.GetBytes(16));
+			// Encode bytes to base64 to get a string
+			return new sun.misc.BASE64Encoder().encode(enc);
+		} catch (javax.crypto.BadPaddingException e) {
+		} catch (IllegalBlockSizeException e) {
+		} catch (UnsupportedEncodingException e) {
+		} catch (java.io.IOException e) {
+		}
+		return null;
+	}
 
-        return Convert.ToBase64String(iEncryptedData);
-    }
+    public String decrypt(String str) {
+        try {
+            // Decode base64 to get bytes
+            byte[] dec = new sun.misc.BASE64Decoder().decodeBuffer(str);
 
-    public  byte[] Decrypt(byte[] prData, byte[] prKey, byte[] prIV)
-    {
+            // Decrypt
+            byte[] utf8 = decrypter.doFinal(dec);
 
-        MemoryStream iStream = new MemoryStream();
-
-        Rijndael iRijndael = Rijndael.Create();
-
-        iRijndael.Key = prKey;
-        iRijndael.IV = prIV;
-
-        CryptoStream iCryptoStream = new CryptoStream(iStream,
-            iRijndael.CreateDecryptor(), CryptoStreamMode.Write);
-
-        iCryptoStream.Write(prData, 0, prData.Length);
-        iCryptoStream.Close();
-
-        byte[] iDecryptedData = iStream.ToArray();
-
-        return iDecryptedData;
-    }
-
-    public string Decrypt(string prStringToEncrypt, string prPassword)
-    {
-        byte[] iEncryptedBytes = Convert.FromBase64String(prStringToEncrypt);
-
-        PasswordDeriveBytes pdb = new PasswordDeriveBytes(prPassword,
-            new byte[] {0x49, 0x76, 0x61, 0x6e, 0x20, 0x4d, 0x65, 
-        0x64, 0x76, 0x65, 0x64, 0x65, 0x76});
-
-        byte[] iDecryptedData = Decrypt(iEncryptedBytes,
-            pdb.GetBytes(32), pdb.GetBytes(16));
-
-        return System.Text.Encoding.Unicode.GetString(iDecryptedData);
+            // Decode using utf-8
+            return new String(utf8, "UTF8");
+        } catch (javax.crypto.BadPaddingException e) {
+        } catch (IllegalBlockSizeException e) {
+        } catch (UnsupportedEncodingException e) {
+        } catch (java.io.IOException e) {
+        }
+        return null;
     }
 }

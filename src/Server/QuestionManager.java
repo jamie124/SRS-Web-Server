@@ -1,146 +1,74 @@
 package Server;
 
-public class QuestionManager
-{
-    UserManager mUserManger;
+import java.util.HashMap;
 
-    Dictionary<int, question> mQuestionList;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.util.QEncoderStream;
 
-    internal Dictionary<int, question> QuestionList
-    {
-        get { return mQuestionList; }
-        set { mQuestionList = value; }
-    }
+import Question.Question;
+import Users.UserManager;
 
-    private int mLastQuestionAddedToList;
+public class QuestionManager {
+	UserManager mUserManger;
 
-    public QuestionManager(UserManager prUserManager)
-    {
-        mQuestionList = new Dictionary<int, question>();
-        mLastQuestionAddedToList = 0;
-        mUserManger = prUserManager;
-    }
+	private HashMap<Integer, Question> mQuestionList;
 
-    // Send question data to tutors
-    public void SendQuestionListToTutors()
-    {
-        int i = 0;
-        if (mUserManger.UsersOnline.Count > 0)
-        {
-            while (i <= mUserManger.MaxUserKey)
-            {
-                // Only send the list to a tutor
-                if (mUserManger.UsersOnline.ContainsKey(i))
-                {
-                    if (mUserManger.UsersOnline[i].UserRole == "Tutor")
-                    {
-                        mUserManger.UsersOnline[i].QuestionListRequested = true;
-                    }
-                }
-                i++;
-            }
-        }
-    }
+	private int mLastQuestionAddedToList;
 
-    // Send question data to a specific tutor
-    public void SendQuestionListToTutor(TcpClient prClient)
-    {
-        int i = 0;
-        if (mUserManger.UsersOnline.Count > 0)
-        {
-            while (i < mUserManger.MaxUserKey)
-            {
-                // Only send the list to a tutor
-                if (mUserManger.UsersOnline.ContainsKey(i))
-                {
-                    if (mUserManger.UsersOnline[i].UserRole == "Tutor" && mUserManger.UsersOnline[i].Client == prClient)
-                    {
-                        mUserManger.UsersOnline[i].QuestionListRequested = true;
-                    }
-                }
-                i++;
-            }
-        }
-    }
+	public QuestionManager(UserManager prUserManager) {
+		mQuestionList = new HashMap<Integer, Question>();
+		mLastQuestionAddedToList = 0;
+		mUserManger = prUserManager;
+	}
 
-    // Insert the question number into the string
-    public string InsertQuestionNumber(string prQuestionString, int prQuestionNum)
-    {
-        return prQuestionString.Insert(0, prQuestionNum.ToString() + "|");
-    }
+	// Send question data to tutors
+	public void SendQuestionListToTutors() {
+		int i = 0;
+		if (mUserManger.UsersOnline.Count > 0) {
+			while (i <= mUserManger.MaxUserKey) {
+				// Only send the list to a tutor
+				if (mUserManger.UsersOnline.ContainsKey(i)) {
+					if (mUserManger.UsersOnline[i].UserRole == "Tutor") {
+						mUserManger.UsersOnline[i].QuestionListRequested = true;
+					}
+				}
+				i++;
+			}
+		}
+	}
 
-    public bool AddNewQuestion(question prQuestion)
-    {
-        if (!mQuestionList.ContainsValue(prQuestion))
-        {
-            if(!mQuestionList.ContainsKey(prQuestion.QuestionID))
-                mQuestionList.Add(prQuestion.QuestionID, prQuestion);
-            else
-                mQuestionList.Add(mQuestionList.Keys.Last() + 1, prQuestion);
-            SendQuestionListToTutors();
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
+	// Insert the question number into the string
+	public String insertQuestionNumber(String prQuestionString, int prQuestionNum) {
+		return prQuestionString .Insert(0, prQuestionNum.ToString() + "|");
+	}
 
-    // Remove the requested question
-    public bool RemoveQuestion(string prQuestionName)
-    {
-        // Get the ID of the question
-        int iQuestionID = -1;
+	public bool AddNewQuestion(question prQuestion) {
+		if (!questionList().ContainsValue(prQuestion)) {
+			if (!questionList().ContainsKey(prQuestion.QuestionID))
+				questionList().Add(prQuestion.QuestionID, prQuestion);
+			else
+				questionList().Add(questionList().Keys.Last() + 1, prQuestion);
+			SendQuestionListToTutors();
+			return true;
+		} else {
+			return false;
+		}
+	}
 
-        foreach (KeyValuePair<int, question> iQuestion in mQuestionList)
-        {
-            if (iQuestion.Value.Question == prQuestionName)
-            {
-                iQuestionID = iQuestion.Key;
-                break;
-            }
-        }
+	// Remove the requested question
+	public boolean removeQuestion(Question prQuestion) {
+		for (Question question : mQuestionList.values()) {
+			if (prQuestion.questionID() == question.questionID()) {
+				mQuestionList.remove(prQuestion);
+				return true;
+			}
+		}
 
-        // Remove the question
-        if (iQuestionID > -1)
-        {
-            mQuestionList.Remove(iQuestionID);
-            return true;
-        }
-        else
-        {       
-            return false;
-        }
-    }
+		return false;
 
-    // Delete a question from the dictionary
-    public bool DeleteQuestion(question prQuestion)
-    {
-        int iQuestionIndex = 0;
+	}
 
-        if (mQuestionList.ContainsValue(prQuestion))
-        {
-            foreach (KeyValuePair<int, question> iQuestion in mQuestionList)
-            {
-                if (iQuestion.Value == prQuestion)
-                {
-                    iQuestionIndex = iQuestion.Key;
-                    break;
-                }
-            }
-
-            mQuestionList.Remove(iQuestionIndex);
-
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    // Gets the largest key in question dictionary
-    private int GetLargestKeyQuestionDict()
+	// Gets the largest key in question dictionary
+	private int GetLargestKeyQuestionDict()
     {
         int iCurrentLargestKey = 0;
         foreach (KeyValuePair<int, question> iQuestion in mQuestionList)
@@ -153,71 +81,64 @@ public class QuestionManager
         return iCurrentLargestKey;
     }
 
-    public int GetNewQuestionID()
-    {
-        int iID = 0;
+	public int GetNewQuestionID() {
+		int iID = 0;
 
-        iID = mQuestionList[mQuestionList.Last().Key].QuestionID + 1;
-        return iID;
-    }
+		iID = questionList()[questionList().Last().Key].QuestionID + 1;
+		return iID;
+	}
 
-    public bool IsListEmpty()
-    {
-        if (mQuestionList.Count == 0)
-            return true;
-        else
-            return false;
-    }
+	public bool IsListEmpty() {
+		if (questionList().Count == 0)
+			return true;
+		else
+			return false;
+	}
 
-    public string GetLastQuestionAdded()
-    {
-        int i = mLastQuestionAddedToList;
-       
-        string iQuestionType = "";
+	public string GetLastQuestionAdded() {
+		int i = mLastQuestionAddedToList;
 
-        if (mQuestionList.ContainsKey(i))
-        {
-            switch (mQuestionList[i].QuestionType)
-            {
-                case "MC":
-                    iQuestionType = "Multi-Choice";
-                    break;
-                case "SA":
-                    iQuestionType = "Short Answer";
-                    break;
-                case "TF":
-                    iQuestionType = "True/False";
-                    break;
-                case "MA":
-                    iQuestionType = "Matching";
-                    break;
-            }
+		string iQuestionType = "";
 
-            mLastQuestionAddedToList++;
-            return mQuestionList[i].Question + " - " + iQuestionType;
-        }
-        mLastQuestionAddedToList++;
-        return "";
-    }
+		if (questionList().ContainsKey(i)) {
+			switch (questionList()[i].QuestionType) {
+			case "MC":
+				iQuestionType = "Multi-Choice";
+				break;
+			case "SA":
+				iQuestionType = "Short Answer";
+				break;
+			case "TF":
+				iQuestionType = "True/False";
+				break;
+			case "MA":
+				iQuestionType = "Matching";
+				break;
+			}
 
-    // Check if a new question is available
-    public bool IsNewQuestionAvailable()
-    {
-        if (GetLargestKeyQuestionDict() >= mLastQuestionAddedToList)
-            return true;
-        else
-            return false;
-    }
+			mLastQuestionAddedToList++;
+			return questionList()[i].Question + " - " + iQuestionType;
+		}
+		mLastQuestionAddedToList++;
+		return "";
+	}
 
-    // Get the requested question object
-    public question GetQuestionByID(int prQuestionID)
-    {
-        question iQuestion = mQuestionList[prQuestionID];
-        return iQuestion;
-    }
+	// Check if a new question is available
+	public bool IsNewQuestionAvailable() {
+		if (GetLargestKeyQuestionDict() >= mLastQuestionAddedToList)
+			return true;
+		else
+			return false;
+	}
 
-    // Returns the question id for provided questionname
-    public int GetQuestionIDByString(string prQuestionName)
+	// Get the requested question object
+	public question GetQuestionByID(int prQuestionID) {
+		question iQuestion = questionList()[prQuestionID];
+		return iQuestion;
+	}
+
+	// Returns the question id for provided questionname
+	public int GetQuestionIDByString(string prQuestionName)
     {
         foreach (KeyValuePair<int, question> iQuestion in mQuestionList)
         {
@@ -230,8 +151,8 @@ public class QuestionManager
         return -1;
     }
 
-    // Checks if the question is already in use
-    public bool IsQuestionNameInUse(string prQuestionName)
+	// Checks if the question is already in use
+	public bool IsQuestionNameInUse(string prQuestionName)
     {
         foreach (KeyValuePair<int, question> iQuestion in mQuestionList)
         {
@@ -241,8 +162,8 @@ public class QuestionManager
         return false;
     }
 
-    // Get question by name
-    public question GetQuestionByName(string prQuestionName)
+	// Get question by name
+	public question GetQuestionByName(string prQuestionName)
     {
         foreach (KeyValuePair<int, question> iQuestion in mQuestionList)
         {
@@ -255,16 +176,22 @@ public class QuestionManager
         return null;
     }
 
-    // Get the the requested question 
-    public string GetQuestionStringByID(int prQuestionID)
-    {
-        return mQuestionList[prQuestionID].Question;
-    }
+	// Get the the requested question
+	public string GetQuestionStringByID(int prQuestionID) {
+		return questionList()[prQuestionID].Question;
+	}
 
-    //Serialisation function.
-    public void GetObjectData(SerializationInfo info, StreamingContext ctxt)
-    {
+	// Serialisation function.
+	public void GetObjectData(SerializationInfo info, StreamingContext ctxt) {
 
-        info.AddValue("UserList", mQuestionList);
-    }
+		info.AddValue("UserList", questionList());
+	}
+
+	public HashMap<String, Question> questionList() {
+		return mQuestionList;
+	}
+
+	public void questionList(HashMap<String, Question> mQuestionList) {
+		this.mQuestionList = mQuestionList;
+	}
 }

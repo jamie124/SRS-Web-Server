@@ -1,7 +1,11 @@
 package Server;
 
+import javax.crypto.SecretKey;
+
+import Answers.AnswerManager;
 import Chat.ChatManager;
 import Chat.ChatMessage;
+import Question.Question;
 import Users.UserManager;
 import Users.UserDetails;
 
@@ -79,11 +83,12 @@ public class IOProcessor {
 		questionManager(prQuestionManager);
 		answerManager(prAnswerManager);
 		chatManager(prChatManager);
-		encryption(new Encryption());
-		// mSerialiserMethods = new DictionarySerialiserMethods();
+
+		// TODO: Move the password to a more secure location
+		encryption(new Encryption("P@ssword1"));
 	}
 
-	public String RemoveFrontCharacters(String prString, int prNumToRemove) {
+	public String removeFrontCharacters(String prString, int prNumToRemove) {
 		int iCount = 0;
 		int iStringLength = prString.length();
 		char[] iStringArray = new char[300];
@@ -106,30 +111,30 @@ public class IOProcessor {
 		return new String(iStringArray);
 	}
 
-	public void ParseNewString(String prString, UserDetails prUser) {
+	public void parseNewString(String prString, UserDetails prUser) {
 		char iContents = GetDataContents(prString);
 
 		switch (iContents) {
 		case 'i':
-			ProcessInstructionString(RemoveFrontCharacters(prString, 2), prUser);
+			processInstructionString(removeFrontCharacters(prString, 2), prUser);
 			break;
 		case 'c':
-			ProcessChatString(prString, prUser);
+			processChatString(prString, prUser);
 			break;
 		case 'Q': // Old question parsing, to be removed
-			ProcessQuestionString(RemoveFrontCharacters(prString, 2), prUser);
+			processQuestionString(removeFrontCharacters(prString, 2), prUser);
 			break;
 		case 'q':
-			ProcessNewQuestion(prString);
+			processNewQuestion(prString);
 			break;
 		case 'A':
-			ProcessAnswerString(RemoveFrontCharacters(prString, 2), prUser);
+			processAnswerString(removeFrontCharacters(prString, 2), prUser);
 			break;
 		case 'u':
-			ProcessUserDetails(prString, prUser);
+			processUserDetails(prString, prUser);
 			break;
 		case 'U':
-			ProcessUserDetailsByString(RemoveFrontCharacters(prString, 2),
+			processUserDetailsByString(removeFrontCharacters(prString, 2),
 					prUser);
 			break;
 		}
@@ -179,7 +184,7 @@ public class IOProcessor {
 	}
 
 	// Interprets instructions sent from command line
-	private void ProcessInstructionString(String prString, UserDetails prUser) {
+	private void processInstructionString(String prString, UserDetails prUser) {
 		InstructionParser iParser = new InstructionParser(this);
 
 		String iInstructions;
@@ -234,86 +239,33 @@ public class IOProcessor {
 		}
 	}
 
-	private void ProcessChatString(String prString, UserDetails prUser) {
+	private void processChatString(String prString, UserDetails prUser) {
 		String iChatString = prString.replace("\0", "");
 		ChatMessage iNewMessageReceived = mSerialiserMethods
 				.ConvertStringToChatMessage(iChatString);
 
 		mMessageLogger.chatMessageQueue().add(iNewMessageReceived);
-		mMessageLogger.NewMessage(
-				iNewMessageReceived.from() + ": " + iNewMessageReceived.message(),
-				MessageLogger.MESSAGE_CHAT);
-	}
-
-	// Old question parsing, to be removed
-	private void ProcessQuestionString(String prString, userDetails prUser) {
-		boolean iQuestionFound = false;
-		boolean iQuestionTypeFound = false;
-		char[] iQuestionString = new char[50];
-		char[] iQuestionType = new char[2];
-		int iCurrPos = 0;
-
-		question iNewQuestion = new question();
-
-		for (int i = 0; i < prString.Length; i++) {
-			if (prString[i] != ';') {
-				if (!iQuestionTypeFound) {
-					if (prString[i] != '|') {
-						iQuestionType[iCurrPos] = prString[i];
-						iCurrPos++;
-					} else {
-						iQuestionTypeFound = true;
-						iCurrPos = 0;
-					}
-				} else {
-					if (!iQuestionFound) {
-						if (prString[i] != '|') {
-							iQuestionString[iCurrPos] = prString[i];
-							iCurrPos++;
-						} else {
-							iQuestionFound = true;
-						}
-					}
-				}
-			} else {
-				break;
-			}
-		}
-
-		if (QuestionManager().IsListEmpty()) {
-			iNewQuestion.QuestionID = 1;
-		} else {
-			iNewQuestion.QuestionID = QuestionManager().GetNewQuestionID();
-		}
-
-		iNewQuestion.Question = new String(iQuestionString).Replace("\0", "");
-		iNewQuestion.QuestionType = new String(iQuestionType);
-		iNewQuestion.QuestionString = "Q;"
-				+ QuestionManager().InsertQuestionNumber(
-						prString.Replace("\0", ""), 1);
-
-		QuestionManager().AddNewQuestion(iNewQuestion);
-		mMessageLogger.NewMessage(iNewQuestion.Question + " added",
-				mMessageLogger.MESSAGE_QUESTION);
+		mMessageLogger.NewMessage(iNewMessageReceived.from() + ": "
+				+ iNewMessageReceived.message(), MessageLogger.MESSAGE_CHAT);
 	}
 
 	// New implementation of question input using XML serialisation
-	private void ProcessNewQuestion(String prQuestionArray) {
-		question iNewQuestion = mSerialiserMethods
+	private void processNewQuestion(String prQuestionArray) {
+		Question iNewQuestion = mSerialiserMethods
 				.ConvertStringToQuestion(prQuestionArray);
 
 		// Set the question ID
-		if (QuestionManager().QuestionList.Count > 0)
+		if (QuestionManager.QuestionList.Count > 0)
 			iNewQuestion.QuestionID = QuestionManager().QuestionList.Last().Key + 1;
 		else
 			iNewQuestion.QuestionID = 0;
 
 		// Determine whether the question is being added or modified
 		// TODO: Implement a better system to do this
-		if (QuestionManager().IsQuestionNameInUse(iNewQuestion.Question)) {
+		if (QuestionManager.IsQuestionNameInUse(iNewQuestion.Question)) {
 			// Remove the old question and add the new one
-			QuestionManager().RemoveQuestion(iNewQuestion.Question);
-			QuestionManager().AddNewQuestion(iNewQuestion);
+			QuestionManager.RemoveQuestion(iNewQuestion);
+			QuestionManager.AddNewQuestion(iNewQuestion);
 		}
 		QuestionManager().AddNewQuestion(iNewQuestion);
 		mMessageLogger.NewMessage(iNewQuestion.Question + " added",
@@ -321,7 +273,7 @@ public class IOProcessor {
 
 	}
 
-	private void ProcessAnswerString(String prString, UserDetails prUser) {
+	private void processAnswerString(String prString, UserDetails prUser) {
 		char[] iAnswerArray = new char[150]; // The max char size for all
 												// answers is currently 150
 		char[] iQuestionIDArray = new char[5]; // allow for up to 99999 ID's
@@ -379,7 +331,7 @@ public class IOProcessor {
 	}
 
 	// Old String based user String
-	private void ProcessUserDetailsByString(String prString, userDetails prUser) {
+	private void processUserDetailsByString(String prString, userDetails prUser) {
 		int iPos = 0;
 		int iCurrPos = 0;
 		int iSection = 0;
@@ -445,7 +397,7 @@ public class IOProcessor {
 	}
 
 	// New XML serialisation method for processing user details
-	private void ProcessUserDetails(String prString, userDetails prUser) {
+	private void processUserDetails(String prString, userDetails prUser) {
 		transferrableUserDetails iUserDetailsFromClient = mSerialiserMethods
 				.ConvertStringToUserDetails(prString);
 
