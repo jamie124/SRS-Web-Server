@@ -14,14 +14,14 @@ public class AnswerManager {
 		receiveResponses(true);
 	}
 
-	public void AddAnswer(Answer prAnswer) {
+	public void addAnswer(Answer prAnswer) {
 		int iAnswerKey;
 		boolean iAnswerAdded = false;
 
 		if (mAnswersList.size() == 0)
 			mAnswersList.put(0, prAnswer);
 		else {
-			iAnswerKey = getLargestKey();
+			iAnswerKey = getLargestAnswerKey();
 
 			while (!iAnswerAdded) {
 
@@ -33,7 +33,7 @@ public class AnswerManager {
 	}
 
 	// Get the largest key
-	private int getLargestKey() {
+	private int getLargestAnswerKey() {
 		int key = 0;
 
 		for (int keyString : mAnswersList.keySet()) {
@@ -45,14 +45,14 @@ public class AnswerManager {
 	}
 
 	// Clear the servers copy version of the answer list
-	public void ClearAnswerList() {
+	public void clearAnswerList() {
 		if (mAnswersList.size() > 0)
 			mAnswersList.clear();
 	}
 
 	// Delete all answers for a certain question
-	public void DeleteAnswersForQuestion(int prQuestionID) {
-		int iLargestKey = getLargestKey();
+	public void deleteAnswersForQuestion(int prQuestionID) {
+		int iLargestKey = getLargestAnswerKey();
 
 		if (mAnswersList.size() > 0) {
 			for (int i = 0; i <= iLargestKey; i++) {

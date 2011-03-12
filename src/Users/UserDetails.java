@@ -74,10 +74,10 @@ public class UserDetails
     public void questionListRequested(boolean mQuestionListRequested) {
 		this.mQuestionListRequested = mQuestionListRequested;
 	}
-    public Question CurrQuestion() {
+    public Question currQuestion() {
 		return mCurrQuestion;
 	}
-	public void CurrQuestion(Question mCurrQuestion) {
+	public void currQuestion(Question mCurrQuestion) {
 		this.mCurrQuestion = mCurrQuestion;
 	}
    

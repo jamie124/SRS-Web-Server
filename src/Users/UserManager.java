@@ -1,230 +1,160 @@
 package Users;
 
-public class UserManager
-{
-    private Object mLock = new Object();
-    private Mutex mThreadMutex = new Mutex();
+import java.util.ArrayList;
+import java.util.HashMap;
 
-    public Mutex ThreadMutex
-    {
-        get { return mThreadMutex; }
-        set { mThreadMutex = value; }
-    }
+import Question.Question;
+import Server.MessageLogger;
 
-    private MessageLogger mMessageLogger;
-    private XmlHandler mXmlHandler;
+public class UserManager {
 
-    private int mMaxUserKey;
+	private MessageLogger mMessageLogger;
+	private XmlHandler mXmlHandler;
 
-    public int MaxUserKey
-    {
-        get { return mMaxUserKey; }
-        set { mMaxUserKey = value; }
-    }
+	private int mMaxUserKey;
 
-    private Dictionary<int, userDetails> mUsersOnline;
-    private Dictionary<int, TutorDetails> mTutors;
+	private HashMap<Integer, UserDetails> mUsersOnline;
+	private HashMap<Integer, TutorDetails> mTutors;
+	// Version of user details intended for transfer to clients
+	private ArrayList<TransferrableUserDetails> mUserDetailsToTransfer;
 
-    public Dictionary<int, TutorDetails> Tutors
-    {
-        get { return mTutors; }
-        set { mTutors = value; }
-    }
+	public UserManager(MessageLogger prMessageLogger) {
+		mUsersOnline = new HashMap<Integer, UserDetails>();
+		mMessageLogger = prMessageLogger;
 
-    public Dictionary<int, userDetails> UsersOnline
-    {
-        get 
-        { 
-            lock (mLock) { return mUsersOnline; }
-        }
-        set
-        {
-            lock (mLock)
-            { mUsersOnline = value; }
-        }
-    }
+		mXmlHandler = new XmlHandler();
+	}
 
-    private Dictionary<int, transferrableUserDetails> mUserDetailsToTransfer;
+	public int maxUserKey() {
+		return mMaxUserKey;
+	}
 
-    public Dictionary<int, transferrableUserDetails> UserDetailsToTransfer
-    {
-        get { return mUserDetailsToTransfer; }
-        set { mUserDetailsToTransfer = value; }
-    }
+	public void maxUserKey(int mMaxUserKey) {
+		this.mMaxUserKey = mMaxUserKey;
+	}
 
-    public UserManager(MessageLogger prMessageLogger)
-    {
-        mUsersOnline = new Dictionary<int, userDetails>();
-        mMessageLogger = prMessageLogger;
+	public HashMap<Integer, UserDetails> usersOnline() {
+		return mUsersOnline;
+	}
 
-        mXmlHandler = new XmlHandler();
-    }
+	public void usersOnline(HashMap<Integer, UserDetails> mUsersOnline) {
+		this.mUsersOnline = mUsersOnline;
+	}
 
-    public bool LoadTutors(string prFilename)
-    {
-        // Attempt to load settings from file
-        mTutors = mXmlHandler.LoadUserSettings(prFilename);
-        if (mTutors != null)
-        {
-            return true;
-        }
-        else
-            return false;
-    }
+	public ArrayList<TransferrableUserDetails> userDetailsToTransfer() {
+		return mUserDetailsToTransfer;
+	}
 
-    public string ConvertQuestionToString(question prQuestion)
-    {
-        string iQuestionString;
+	public void userDetailsToTransfer(ArrayList<TransferrableUserDetails> mUserDetailsToTransfer) {
+		this.mUserDetailsToTransfer = mUserDetailsToTransfer;
+	}
 
-        iQuestionString = "Q;" + prQuestion.QuestionID.ToString() + "|" + 
-            prQuestion.QuestionType + "|" + prQuestion.Question + "|";
+	public boolean LoadTutors(String prFilename) {
+		// Attempt to load settings from file
+		mTutors = mXmlHandler.LoadUserSettings(prFilename);
+		if (mTutors != null) {
+			return true;
+		} else
+			return false;
+	}
 
-        // Some questions may not have answers
-        if (prQuestion.PossibleAnswers != null)
-        {
-            foreach (string iPosAnswer in prQuestion.PossibleAnswers)
-            {
-                iQuestionString += iPosAnswer;
-                if (iPosAnswer != "")
-                {
-                    iQuestionString += ",";
-                }
-                else
-                {
-                    iQuestionString = iQuestionString.Substring(0, iQuestionString.Length - 1);
-                    break;
-                }
-            }
-        }
+	// Sets a question for each user
+	public void SetQuestions(Question prQuestion) {
+		int i = 0;
 
-        iQuestionString += "|" + prQuestion.Answer + ";";
+		if (mUsersOnline.size() > 0) {
+			while (i <= mMaxUserKey) {
+				if (mUsersOnline.containsKey(i)) {
+					mUsersOnline.get(i).currQuestion(prQuestion);
 
-        return iQuestionString;
-    }
+					/*
+					 * TODO: May not be needed
+					 * mUsersOnline.get(i).currQuestion()
+					 * .questionString(prQuestion.questionString());
+					 * mUsersOnline
+					 * .get(i).currQuestion().questionID(prQuestion.questionID
+					 * ()); mUsersOnline[i].CurrQuestion.QuestionType =
+					 * prQuestion.QuestionType;
+					 * mUsersOnline[i].CurrQuestion.PossibleAnswers =
+					 * prQuestion.PossibleAnswers;
+					 * mUsersOnline[i].CurrQuestion.Answer = prQuestion.Answer;
+					 */
 
-    // Sets a question for each user
-    public void SetQuestions(question prQuestion)
-    {
-        int i = 0;
-        
+				}
+				i++;
+			}
+		}
+	}
 
-        if (mUsersOnline.Count > 0)
-        {
-            while (i <= mMaxUserKey)
-            {
-                if (mUsersOnline.ContainsKey(i))
-                {
-                    // If the user is on an iOS device, iPod Touch/iPhone/iPad, the question needs to be
-                    // sent using old string format; due to platforms lack of serialisation libraries.
-                    if (mUsersOnline[i].DeviceOS == "iOS")
-                    {
-                        mUsersOnline[i].CurrQuestionString = ConvertQuestionToString(prQuestion);
-                    }
-                    else
-                    {
-                        lock (mLock)
-                        {
-                            mUsersOnline[i].CurrQuestion = new question();
-                            mUsersOnline[i].CurrQuestion.Question = prQuestion.Question;
-                            mUsersOnline[i].CurrQuestion.QuestionID = prQuestion.QuestionID;
-                            mUsersOnline[i].CurrQuestion.QuestionType = prQuestion.QuestionType;
-                            mUsersOnline[i].CurrQuestion.PossibleAnswers = prQuestion.PossibleAnswers;
-                            mUsersOnline[i].CurrQuestion.Answer = prQuestion.Answer;
-                        }
-                    }
-                }
-                i++;
-            }
-        }
-    }
+	// Get the largest key in the user dictionary
+	private int getLargestUserKey() {
+		int iCurrentLargestKey = 0;
+		int key = 0;
 
-    // Get the largest key in the user dictionary
-    // Should really find a more efficient method
-    private int GetLargestKeyUserDict()
-    {
-        int iCurrentLargestKey = 0;
-        foreach(KeyValuePair<int, userDetails> iUserDetails in mUsersOnline)
-        {
-            if (iUserDetails.Key > iCurrentLargestKey)
-            {
-                iCurrentLargestKey = iUserDetails.Key;
-            }
-        }
-        return iCurrentLargestKey;
-    }
+		for (int keyString : mUsersOnline.keySet()) {
+			if (keyString > key)
+				key = keyString;
+		}
 
-    // Copy the important details from userDetails to transferrableUserDetails dictionaries
-    private void ProcessUserDetails()
-    {
-        mUserDetailsToTransfer = new Dictionary<int, transferrableUserDetails>();
-        transferrableUserDetails iTempDetails = new transferrableUserDetails();
-        int i = 0;      // Current item to add
+		return key;
+	}
 
-        // Loop through dictionary
-        foreach (KeyValuePair<int, userDetails> iUserDetails in mUsersOnline)
-        {
-            iTempDetails = new transferrableUserDetails();
-            iTempDetails.Username = iUserDetails.Value.Username;
-            iTempDetails.DeviceOS = iUserDetails.Value.DeviceOS;
-            iTempDetails.UserRole = iUserDetails.Value.UserRole;
+	// Copy the important details from userDetails to transferrableUserDetails
+	private void processUserDetails() {
+		mUserDetailsToTransfer = new ArrayList<TransferrableUserDetails>();
+		TransferrableUserDetails iTempDetails = new TransferrableUserDetails();
 
-            mUserDetailsToTransfer.Add(i, iTempDetails);
-            i++;
-        }
-    }
+		// Loop through dictionary
+		for (UserDetails userDetails : mUsersOnline.values()) {
+			iTempDetails = new TransferrableUserDetails();
+			iTempDetails.username(userDetails.username());
+			iTempDetails.deviceOS(userDetails.deviceOS());
+			iTempDetails.userRole(userDetails.userRole());
 
-    // Send the current user details to tutors
-    public void SendUserListToTutors()
-    {
-        ProcessUserDetails();
-        int i = 0;
-        int iNumUsers = 0;
+			mUserDetailsToTransfer.add(iTempDetails);
+		}
+	}
 
-        iNumUsers = mMaxUserKey;
+	// Send the current user details to tutors
+	public void sendUserListToTutors() {
+		processUserDetails();
+		int i = 0;
+		int iNumUsers = 0;
 
-        // Hack to fix the bug that stops the server from sending userlist update 
-        //when there there's only 1 user online.
-        if (mUsersOnline.Count == 1)
-        {
-            i = mUsersOnline.First().Key;
-        }
+		iNumUsers = mMaxUserKey;
 
-        while (i <= iNumUsers)
-        {
-            // Only send the list to a tutor
-            if (mUsersOnline.ContainsKey(i))
-            {
-                if (mUsersOnline[i].UserRole == "Tutor")
-                {
-                    lock (mLock)
-                    {
-                        mUsersOnline[i].UserListRequested = true;
-                    }
-                }
-            }
-            i++;
-        }
-        
-    }
+		// Hack to fix the bug that stops the server from sending userlist
+		// update
+		// when there there's only 1 user online.
+		if (mUsersOnline.size() == 1) {
+			i = getLargestUserKey();
+		}
 
-    // Check if the tutors list contains the provided name
-    public bool IsUserATutor(string prUsername)
-    {
-        if (mTutors != null)
-        {
-            foreach (KeyValuePair<int, TutorDetails> iTutors in mTutors)
-            {
-                if (iTutors.Value.Name == prUsername)
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
+		while (i <= iNumUsers) {
+			// Only send the list to a tutor
+			if (mUsersOnline.containsKey(i)) {
+				if (mUsersOnline.get(i).userRole() == "Tutor") {
+					mUsersOnline.get(i).userListRequested(true);
+				}
+			}
+			i++;
+		}
 
-    // Check the password against a user
-    public bool VerifyPassword(userDetails prUser)
+	}
+
+	// Check if the tutors list contains the provided name
+	public boolean isUserATutor(String prUsername) {
+		if (mTutors != null) {
+			for (UserDetails userDetails : mUsersOnline.values()) {
+				if (userDetails.userRole() == "Tutor")
+					return true;
+			}
+		}
+		return false;
+	}
+
+	// Check the password against a user
+	public boolean VerifyPassword(userDetails prUser)
     {
         foreach (KeyValuePair<int, TutorDetails> iUser in mTutors)
         {
@@ -241,53 +171,47 @@ public class UserManager
         return false;
     }
 
-    // Get number of users online
-    public int GetNumOfUsers()
-    {
-        int iCount;
-        //mThreadMutex.WaitOne();
-        iCount = mUsersOnline.Count();
-        //mThreadMutex.ReleaseMutex();
+	// Get number of users online
+	public int GetNumOfUsers() {
+		int iCount;
+		// mThreadMutex.WaitOne();
+		iCount = usersOnline().Count();
+		// mThreadMutex.ReleaseMutex();
 
-        return iCount;
-    }
+		return iCount;
+	}
 
-    // Gets a new free ID
-    public int GetNewUserID(int prExtraIndex)
-    {
-        if (mUsersOnline.Count == 0)
-            return 0;
-        else
-            return mUsersOnline.Last().Key + 1 + prExtraIndex;
-    }
-    
-    public void AddNewUser(userDetails prUser)
-    {
-        int iNewID = GetNewUserID(0);
-        int iExtra = 0;
+	// Gets a new free ID
+	public int GetNewUserID(int prExtraIndex) {
+		if (usersOnline().Count == 0)
+			return 0;
+		else
+			return usersOnline().Last().Key + 1 + prExtraIndex;
+	}
 
-        // Make sure the generated ID is not already in use
-        while (true)
-        {
-            if (mUsersOnline.ContainsKey(iNewID))
-            {
-                iExtra++;
-                iNewID = GetNewUserID(iExtra);
-            }
-            else
-                break;
-        }
+	public void AddNewUser(userDetails prUser) {
+		int iNewID = GetNewUserID(0);
+		int iExtra = 0;
 
-        mUsersOnline.Add(iNewID, prUser);
+		// Make sure the generated ID is not already in use
+		while (true) {
+			if (usersOnline().ContainsKey(iNewID)) {
+				iExtra++;
+				iNewID = GetNewUserID(iExtra);
+			} else
+				break;
+		}
 
-        // Update max user key
-        mMaxUserKey = GetLargestKeyUserDict();
+		usersOnline().Add(iNewID, prUser);
 
-        SendUserListToTutors();
-    }
+		// Update max user key
+		maxUserKey(GetLargestKeyUserDict());
 
-    // Add a new tutor to the list
-    public void AddTutor(TutorDetails prTutor)
+		SendUserListToTutors();
+	}
+
+	// Add a new tutor to the list
+	public void AddTutor(TutorDetails prTutor)
     {
         if (mTutors == null)
             mTutors = new Dictionary<int, TutorDetails>();
@@ -297,9 +221,9 @@ public class UserManager
         else
             mTutors.Add(mTutors.Last().Key + 1, prTutor);
     }
-    
-    // Remove a tutor from the list
-    public void RemoveTutor(string prTutorName)
+
+	// Remove a tutor from the list
+	public void RemoveTutor(String prTutorName)
     {
         int iTutorID = 0;
 
@@ -315,8 +239,8 @@ public class UserManager
         mTutors.Remove(iTutorID);
     }
 
-    // Gets the tutor object for the provided name
-    public TutorDetails GetTutorDetails(string prName)
+	// Gets the tutor object for the provided name
+	public TutorDetails GetTutorDetails(String prName)
     {
         foreach (KeyValuePair<int, TutorDetails> iTutor in mTutors)
         {
@@ -326,8 +250,8 @@ public class UserManager
         return null;
     }
 
-    // Remove a user 
-    public void RemoveUser(TcpClient prClient)
+	// Remove a user
+	public void RemoveUser(TcpClient prClient)
     {
         // Find the key
         int iKey = 0;
@@ -352,8 +276,8 @@ public class UserManager
         
     }
 
-    // Kick all connected users from server
-    public void KickUsers()
+	// Kick all connected users from server
+	public void KickUsers()
     {
         //mThreadMutex.WaitOne();
         lock (mLock)
@@ -363,8 +287,8 @@ public class UserManager
         //mThreadMutex.ReleaseMutex();
     }
 
-    // Gets the username for the given client
-    public string GetUsernameByClient(TcpClient prClient)
+	// Gets the username for the given client
+	public String GetUsernameByClient(TcpClient prClient)
     {
         foreach (KeyValuePair<int, userDetails> iUser in mUsersOnline)
         {
@@ -375,9 +299,9 @@ public class UserManager
         }
         return "Unknown";
     }
-    
-    // Gets the user details for the given client
-    public userDetails GetUserByClient(TcpClient prClient)
+
+	// Gets the user details for the given client
+	public userDetails GetUserByClient(TcpClient prClient)
     {
         foreach (KeyValuePair<int, userDetails> iUser in mUsersOnline)
         {
@@ -389,8 +313,8 @@ public class UserManager
         return new userDetails();
     }
 
-    // Check if the username is available
-    public bool IsUsernameAvailable(string prUsername)
+	// Check if the username is available
+	public boolean IsUsernameAvailable(String prUsername)
     {
         foreach (KeyValuePair<int, userDetails> iUser in mUsersOnline)
         {
@@ -401,12 +325,4 @@ public class UserManager
         }
         return true;
     }
-    
-    //Serialisation function.
-    public void GetObjectData(SerializationInfo info, StreamingContext ctxt)
-    {
-
-        info.AddValue("UserList", mUsersOnline);
-    }
-}
 }

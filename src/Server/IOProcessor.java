@@ -255,20 +255,20 @@ public class IOProcessor {
 				.ConvertStringToQuestion(prQuestionArray);
 
 		// Set the question ID
-		if (QuestionManager.QuestionList.Count > 0)
-			iNewQuestion.QuestionID = QuestionManager().QuestionList.Last().Key + 1;
+		if (mQuestionManager.questionList().size() > 0)
+			iNewQuestion.QuestionID = mQuestionManager.get
 		else
 			iNewQuestion.QuestionID = 0;
 
 		// Determine whether the question is being added or modified
 		// TODO: Implement a better system to do this
-		if (QuestionManager.IsQuestionNameInUse(iNewQuestion.Question)) {
+		if (mQuestionManager.IsQuestionNameInUse(iNewQuestion.Question)) {
 			// Remove the old question and add the new one
-			QuestionManager.RemoveQuestion(iNewQuestion);
-			QuestionManager.AddNewQuestion(iNewQuestion);
+			mQuestionManager.removeQuestion(iNewQuestion);
+			mQuestionManager.addNewQuestion(iNewQuestion);
 		}
-		QuestionManager().AddNewQuestion(iNewQuestion);
-		mMessageLogger.NewMessage(iNewQuestion.Question + " added",
+		mQuestionManager.addNewQuestion(iNewQuestion);
+		mMessageLogger.NewMessage(iNewQuestion.questionString() + " added",
 				mMessageLogger.MESSAGE_QUESTION);
 
 	}

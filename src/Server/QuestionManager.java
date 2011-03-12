@@ -8,7 +8,7 @@ import Question.Question;
 import Users.UserManager;
 
 public class QuestionManager {
-	UserManager mUserManger;
+	UserManager mUserManager;
 
 	private HashMap<Integer, Question> mQuestionList;
 
@@ -17,18 +17,18 @@ public class QuestionManager {
 	public QuestionManager(UserManager prUserManager) {
 		mQuestionList = new HashMap<Integer, Question>();
 		mLastQuestionAddedToList = 0;
-		mUserManger = prUserManager;
+		mUserManager = prUserManager;
 	}
 
 	// Send question data to tutors
-	public void SendQuestionListToTutors() {
+	public void sendQuestionListToTutors() {
 		int i = 0;
-		if (mUserManger.UsersOnline.Count > 0) {
-			while (i <= mUserManger.MaxUserKey) {
+		if (mUserManager.UsersOnline.Count > 0) {
+			while (i <= mUserManager.MaxUserKey) {
 				// Only send the list to a tutor
-				if (mUserManger.UsersOnline.ContainsKey(i)) {
-					if (mUserManger.UsersOnline[i].UserRole == "Tutor") {
-						mUserManger.UsersOnline[i].QuestionListRequested = true;
+				if (mUserManager.UsersOnline.ContainsKey(i)) {
+					if (mUserManager.UsersOnline[i].UserRole == "Tutor") {
+						mUserManager.UsersOnline[i].QuestionListRequested = true;
 					}
 				}
 				i++;
@@ -36,22 +36,20 @@ public class QuestionManager {
 		}
 	}
 
-	// Insert the question number into the string
+	// Insert the question number into the String
 	public String insertQuestionNumber(String prQuestionString, int prQuestionNum) {
-		return prQuestionString .Insert(0, prQuestionNum.ToString() + "|");
+		return Integer.toString(prQuestionNum) + "|" + prQuestionString;
 	}
 
-	public bool AddNewQuestion(question prQuestion) {
-		if (!questionList().ContainsValue(prQuestion)) {
-			if (!questionList().ContainsKey(prQuestion.QuestionID))
-				questionList().Add(prQuestion.QuestionID, prQuestion);
-			else
-				questionList().Add(questionList().Keys.Last() + 1, prQuestion);
-			SendQuestionListToTutors();
-			return true;
-		} else {
+	public boolean addNewQuestion(Question prQuestion) {
+		if (!questionList().containsKey(prQuestion.questionID()))
+			questionList().put(prQuestion.questionString(), prQuestion);
+		else
 			return false;
-		}
+
+		sendQuestionListToTutors();
+		return true;
+
 	}
 
 	// Remove the requested question
@@ -67,131 +65,125 @@ public class QuestionManager {
 
 	}
 
-	// Gets the largest key in question dictionary
-	private int GetLargestKeyQuestionDict()
-    {
-        int iCurrentLargestKey = 0;
-        foreach (KeyValuePair<int, question> iQuestion in mQuestionList)
-        {
-            if (iQuestion.Key > iCurrentLargestKey)
-            {
-                iCurrentLargestKey = iQuestion.Key;
-            }
-        }
-        return iCurrentLargestKey;
-    }
+	// Get the largest key
+	public int getLargestQuestionKey() {
+		int key = 0;
 
-	public int GetNewQuestionID() {
-		int iID = 0;
+		for (int keyString : mQuestionList.keySet()) {
+			if (keyString > key)
+				key = keyString;
+		}
 
-		iID = questionList()[questionList().Last().Key].QuestionID + 1;
-		return iID;
+		return key;
 	}
 
-	public bool IsListEmpty() {
-		if (questionList().Count == 0)
+	// Returns a new ID to use for a question
+	public int getNewQuestionID() {
+		int iId = 0;
+
+		iId = getLargestQuestionKey() + 1;
+		return iId;
+	}
+
+	public boolean isListEmpty() {
+		if (questionList().size() == 0)
 			return true;
 		else
 			return false;
 	}
 
-	public string GetLastQuestionAdded() {
+	public String getLastQuestionAdded() {
 		int i = mLastQuestionAddedToList;
 
-		string iQuestionType = "";
+		String iQuestionType = "";
+		String iQuestionCode = "";
 
-		if (questionList().ContainsKey(i)) {
-			switch (questionList()[i].QuestionType) {
-			case "MC":
+		if (questionList().containsKey(i)) {
+			iQuestionCode = questionList().get(i).questionType();
+			
+			if (iQuestionCode.equals("MC")){
 				iQuestionType = "Multi-Choice";
-				break;
-			case "SA":
+			} else if (iQuestionCode.equals("SA")){
 				iQuestionType = "Short Answer";
-				break;
-			case "TF":
+			} else if (iQuestionCode.equals("TF")){
 				iQuestionType = "True/False";
-				break;
-			case "MA":
+			} else if (iQuestionCode.equals("MA")){
 				iQuestionType = "Matching";
-				break;
 			}
 
 			mLastQuestionAddedToList++;
-			return questionList()[i].Question + " - " + iQuestionType;
+			return questionList().get(i).questionString() + " - " + iQuestionType;
 		}
 		mLastQuestionAddedToList++;
 		return "";
 	}
 
 	// Check if a new question is available
-	public bool IsNewQuestionAvailable() {
-		if (GetLargestKeyQuestionDict() >= mLastQuestionAddedToList)
+	public boolean isNewQuestionAvailable() {
+		if (getLargestQuestionKey() >= mLastQuestionAddedToList)
 			return true;
 		else
 			return false;
 	}
 
 	// Get the requested question object
-	public question GetQuestionByID(int prQuestionID) {
-		question iQuestion = questionList()[prQuestionID];
+	public Question getQuestionByID(int prQuestionID) {
+		Question iQuestion = mQuestionList.get(prQuestionID);
 		return iQuestion;
 	}
 
-	// Returns the question id for provided questionname
-	public int GetQuestionIDByString(string prQuestionName)
+	// Returns the question id for provided question name
+	public int getQuestionIDByString(String prQuestionString)
     {
-        foreach (KeyValuePair<int, question> iQuestion in mQuestionList)
-        {
-            if (iQuestion.Value.Question == prQuestionName)
+		for (Question question : mQuestionList.values()){
+            if (question.questionString() == prQuestionString)
             {
-                return iQuestion.Value.QuestionID;
+                return question.questionID();
             }
-        }
+		}
+
         // Question not found
         return -1;
     }
 
-	// Checks if the question is already in use
-	public bool IsQuestionNameInUse(string prQuestionName)
+	// Checks if the question string is already in use
+	public boolean isQuestionStringInUse(String prQuestionString)
     {
-        foreach (KeyValuePair<int, question> iQuestion in mQuestionList)
-        {
-            if (iQuestion.Value.Question == prQuestionName)
+		for (Question question : mQuestionList.values()){
+            if (question.questionString() == prQuestionString)
+            {
                 return true;
-        }
+            }
+		}
         return false;
     }
 
 	// Get question by name
-	public question GetQuestionByName(string prQuestionName)
+	public Question getQuestionByNameString(String prQuestionString)
     {
-        foreach (KeyValuePair<int, question> iQuestion in mQuestionList)
-        {
-            if (iQuestion.Value.Question == prQuestionName)
+		for (Question question : mQuestionList.values()){
+            if (question.questionString() == prQuestionString)
             {
-                return iQuestion.Value;
+                return question;
             }
-        }
+		}
         // Question not found
         return null;
     }
 
 	// Get the the requested question
-	public string GetQuestionStringByID(int prQuestionID) {
-		return questionList()[prQuestionID].Question;
+	public String getQuestionStringByID(int prQuestionID) {
+		if (mQuestionList.containsKey(prQuestionID))
+			return mQuestionList.get(prQuestionID).questionString();
+		else
+			return "";
 	}
 
-	// Serialisation function.
-	public void GetObjectData(SerializationInfo info, StreamingContext ctxt) {
-
-		info.AddValue("UserList", questionList());
-	}
-
-	public HashMap<String, Question> questionList() {
+	public HashMap<Integer, Question> questionList() {
 		return mQuestionList;
 	}
 
-	public void questionList(HashMap<String, Question> mQuestionList) {
+	public void questionList(HashMap<Integer, Question> mQuestionList) {
 		this.mQuestionList = mQuestionList;
 	}
 }
