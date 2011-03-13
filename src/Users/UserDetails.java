@@ -5,6 +5,7 @@ import Question.Question;
 public class UserDetails
 {
 
+	private int mID;
     private String mUsername;
     private String mPassword;
     private String mDeviceOS;
@@ -79,6 +80,18 @@ public class UserDetails
 	}
 	public void currQuestion(Question mCurrQuestion) {
 		this.mCurrQuestion = mCurrQuestion;
+	}
+	public int id() {
+		return mID;
+	}
+	public void id(int mID) {
+		this.mID = mID;
+	}
+	public boolean connected() {
+		return mConnected;
+	}
+	public void connected(boolean mConnected) {
+		this.mConnected = mConnected;
 	}
    
 

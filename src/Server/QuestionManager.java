@@ -23,13 +23,12 @@ public class QuestionManager {
 	// Send question data to tutors
 	public void sendQuestionListToTutors() {
 		int i = 0;
-		if (mUserManager.UsersOnline.Count > 0) {
-			while (i <= mUserManager.MaxUserKey) {
+		if (mUserManager.usersOnline().size() > 0) {
+			while (i <= mUserManager.maxUserKey()) {
 				// Only send the list to a tutor
-				if (mUserManager.UsersOnline.ContainsKey(i)) {
-					if (mUserManager.UsersOnline[i].UserRole == "Tutor") {
-						mUserManager.UsersOnline[i].QuestionListRequested = true;
-					}
+				if (mUserManager.usersOnline().containsKey(i)) {
+					if (mUserManager.usersOnline().get(i).userRole().equals("Tutor"))
+						mUserManager.usersOnline().get(i).questionListRequested(true);
 				}
 				i++;
 			}
@@ -43,7 +42,7 @@ public class QuestionManager {
 
 	public boolean addNewQuestion(Question prQuestion) {
 		if (!questionList().containsKey(prQuestion.questionID()))
-			questionList().put(prQuestion.questionString(), prQuestion);
+			questionList().put(prQuestion.questionID(), prQuestion);
 		else
 			return false;
 
@@ -100,14 +99,14 @@ public class QuestionManager {
 
 		if (questionList().containsKey(i)) {
 			iQuestionCode = questionList().get(i).questionType();
-			
-			if (iQuestionCode.equals("MC")){
+
+			if (iQuestionCode.equals("MC")) {
 				iQuestionType = "Multi-Choice";
-			} else if (iQuestionCode.equals("SA")){
+			} else if (iQuestionCode.equals("SA")) {
 				iQuestionType = "Short Answer";
-			} else if (iQuestionCode.equals("TF")){
+			} else if (iQuestionCode.equals("TF")) {
 				iQuestionType = "True/False";
-			} else if (iQuestionCode.equals("MA")){
+			} else if (iQuestionCode.equals("MA")) {
 				iQuestionType = "Matching";
 			}
 
@@ -133,43 +132,37 @@ public class QuestionManager {
 	}
 
 	// Returns the question id for provided question name
-	public int getQuestionIDByString(String prQuestionString)
-    {
-		for (Question question : mQuestionList.values()){
-            if (question.questionString() == prQuestionString)
-            {
-                return question.questionID();
-            }
+	public int getQuestionIDByString(String prQuestionString) {
+		for (Question question : mQuestionList.values()) {
+			if (question.questionString().equals(prQuestionString)) {
+				return question.questionID();
+			}
 		}
 
-        // Question not found
-        return -1;
-    }
+		// Question not found
+		return -1;
+	}
 
 	// Checks if the question string is already in use
-	public boolean isQuestionStringInUse(String prQuestionString)
-    {
-		for (Question question : mQuestionList.values()){
-            if (question.questionString() == prQuestionString)
-            {
-                return true;
-            }
+	public boolean isQuestionStringInUse(String prQuestionString) {
+		for (Question question : mQuestionList.values()) {
+			if (question.questionString().equals(prQuestionString)) {
+				return true;
+			}
 		}
-        return false;
-    }
+		return false;
+	}
 
 	// Get question by name
-	public Question getQuestionByNameString(String prQuestionString)
-    {
-		for (Question question : mQuestionList.values()){
-            if (question.questionString() == prQuestionString)
-            {
-                return question;
-            }
+	public Question getQuestionByNameString(String prQuestionString) {
+		for (Question question : mQuestionList.values()) {
+			if (question.questionString() == prQuestionString) {
+				return question;
+			}
 		}
-        // Question not found
-        return null;
-    }
+		// Question not found
+		return null;
+	}
 
 	// Get the the requested question
 	public String getQuestionStringByID(int prQuestionID) {

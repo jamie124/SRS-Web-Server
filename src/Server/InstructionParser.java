@@ -15,9 +15,9 @@ public class InstructionParser
 
     public InstructionParser(IOProcessor prIOProcessor)
     {
-        mQuestionManager = prIOProcessor.QuestionManager;
-        mUserManager = prIOProcessor.UserManager;
-        mAnswerManager = prIOProcessor.AnswerManager;
+        mQuestionManager = prIOProcessor.questionManager();
+        mUserManager = prIOProcessor.userManager();
+        mAnswerManager = prIOProcessor.answerManager();
     }
 
     // Start parsing the String

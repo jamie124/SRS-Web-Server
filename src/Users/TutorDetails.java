@@ -2,6 +2,7 @@ package Users;
 
 public class TutorDetails
 {
+	private int mID;
     private String mName;
     private String mPassword;
     private String mTutorClass;
@@ -23,6 +24,12 @@ public class TutorDetails
 	}
 	public void tutorClass(String mTutorClass) {
 		this.mTutorClass = mTutorClass;
+	}
+	public int id() {
+		return mID;
+	}
+	public void id(int mID) {
+		this.mID = mID;
 	}
     
     

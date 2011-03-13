@@ -7,183 +7,168 @@ import java.util.Queue;
 
 import Chat.ChatMessage;
 
-public class MessageLogger
-{
-    // Defines
-    static int MESSAGE_SERVER = 1;
-    static int MESSAGE_TUTOR = 2;
-    static int MESSAGE_STUDENT = 3;
+public class MessageLogger {
+	// Defines
+	static int MESSAGE_SERVER = 1;
+	static int MESSAGE_TUTOR = 2;
+	static int MESSAGE_STUDENT = 3;
 
-    static int MESSAGE_CHAT = 4;
-    static int MESSAGE_NETWORK = 5;
-    static int MESSAGE_ERROR = 6;
-    static int MESSAGE_WARNING = 7;
-    static int MESSAGE_QUESTION = 8;
-    static int MESSAGE_ANSWER = 9;
-    static int MESSAGE_COMMAND = 10;
-        
-    private HashMap<Integer, String> mMessageLog;			// Store all local server messages
-    private Queue<ChatMessage> mChatMessageQueue;                // Queue to hold messages to be sent
+	static int MESSAGE_CHAT = 4;
+	static int MESSAGE_NETWORK = 5;
+	static int MESSAGE_ERROR = 6;
+	static int MESSAGE_WARNING = 7;
+	static int MESSAGE_QUESTION = 8;
+	static int MESSAGE_ANSWER = 9;
+	static int MESSAGE_COMMAND = 10;
 
-    private int mCurrentMessageNo;
-    private int mLastMessagePosted;
+	private HashMap<Integer, String> mMessageLog; // Store all local server
+													// messages
+	private Queue<ChatMessage> mChatMessageQueue; // Queue to hold messages to
+													// be sent
 
-    public MessageLogger()
-    {
-        messageLog(new HashMap<Integer, String>());
-        //mChatMessageQueue = new List<Message>();
-        chatMessageQueue(new LinkedList<ChatMessage>());
-    }
+	private int mCurrentMessageNo;
+	private int mLastMessagePosted;
 
-    public boolean IsMessageQueueEmpty()
-    {
-        if (chatMessageQueue().size() == 0)
-            return true;
-        else
-            return false;
-    }
+	public MessageLogger() {
+		messageLog(new HashMap<Integer, String>());
+		// mChatMessageQueue = new List<Message>();
+		chatMessageQueue(new LinkedList<ChatMessage>());
+	}
 
-    // Get any messages in queue and return as a String to be sent to all connected clients
-    public String GetMessagesToSend()
-    {
-        String iMessages = "";
-        ChatMessage iMessage;
+	public boolean isMessageQueueEmpty() {
+		if (chatMessageQueue().size() == 0)
+			return true;
+		else
+			return false;
+	}
 
-        if (chatMessageQueue().size() != 0)
-        {
-            for (int i = 0; i <= chatMessageQueue().size(); i++)
-            {
-                iMessage = (ChatMessage)chatMessageQueue().poll();
-                iMessages += iMessage.message() + ": " + iMessage.message() + "\n";
-            }
-        }
-        return iMessages;
-    }
+	// Get any messages in queue and return as a String to be sent to all
+	// connected clients
+	public String getMessagesToSend() {
+		String iMessages = "";
+		ChatMessage iMessage;
 
-    // Gets the first message in the queue
-    public ChatMessage GetNextMessageToSend()
-    {
-        ChatMessage iLastMessage = new ChatMessage();
+		if (chatMessageQueue().size() != 0) {
+			for (int i = 0; i <= chatMessageQueue().size(); i++) {
+				iMessage = (ChatMessage) chatMessageQueue().poll();
+				iMessages += iMessage.message() + ": " + iMessage.message() + "\n";
+			}
+		}
+		return iMessages;
+	}
 
-        iLastMessage = (ChatMessage)chatMessageQueue().poll();
+	// Gets the first message in the queue
+	public ChatMessage getNextMessageToSend() {
+		ChatMessage iLastMessage = new ChatMessage();
 
-        return iLastMessage;
-    }
+		iLastMessage = (ChatMessage) chatMessageQueue().poll();
 
-    public String DisplayLastMessages()
-    {
-        int iMessagesToReturn = 0;
-        int iSize = messageLog().size();
-        String iMessages = "";
+		return iLastMessage;
+	}
 
-        iMessagesToReturn = iSize - mLastMessagePosted;
+	public String displayLastMessages() {
+		int iMessagesToReturn = 0;
+		int iSize = messageLog().size();
+		String iMessages = "";
 
-        if (iSize == 1)
-        {
-            iMessages = messageLog().get(0);
-        }
-        else
-        {
-            for (int i = mLastMessagePosted; i < (mLastMessagePosted + iMessagesToReturn); i++)
-            {
-                iMessages += messageLog().get(i);
-                //mLastMessagePosted++;
-            }
-        }
+		iMessagesToReturn = iSize - mLastMessagePosted;
 
-       
-        mLastMessagePosted = iSize;
-        return iMessages;
-    }
+		if (iSize == 1) {
+			iMessages = messageLog().get(0);
+		} else {
+			for (int i = mLastMessagePosted; i < (mLastMessagePosted + iMessagesToReturn); i++) {
+				iMessages += messageLog().get(i);
+				// mLastMessagePosted++;
+			}
+		}
 
-    public void NewMessage(String prMessage, int prFlag)
-    {
-        String iMsgToAdd = "";
-        int iIndex = 0;
+		mLastMessagePosted = iSize;
+		return iMessages;
+	}
 
-        iIndex = mCurrentMessageNo;
+	public void newMessage(String prMessage, int prFlag) {
+		String iMsgToAdd = "";
+		int iIndex = 0;
 
-        switch (prFlag)
-        {
-            case 1:
-                iMsgToAdd = "Server: " + prMessage + "\n";
-        	    break;
-            case 2:
-                iMsgToAdd = "Admin: " + prMessage + "\n";
-                break;
-            case 3:
-                iMsgToAdd = "Student: " + prMessage + "\n";
-                break;
-            case 4:
-                iMsgToAdd = "Message: " + prMessage + "\n";
-                break;
-            case 5:
-                iMsgToAdd = "Network: " + prMessage + "\n";
-                break;
-            case 6:
-                iMsgToAdd = "Error: " + prMessage + "!" + "\n";
-                break;
-            case 7:
-                iMsgToAdd = "Warning: " + prMessage + "\n";
-                break;
-            case 8:
-                iMsgToAdd = "Question: " + prMessage + "\n";
-                break;
-            case 9:
-                iMsgToAdd = "Answer: " + prMessage + "\n";
-                break;
-            case 10:
-                iMsgToAdd = "> " + prMessage + "\n";
-                break;
-        }
+		iIndex = mCurrentMessageNo;
 
-        // To stop a bug as well as limit log spam a message must not be a duplicate of the message before it
-        // Fix at some point to allow for more accurate results
-        String iPreviousMessage = "";
-        if (messageLog().containsValue(iIndex - 1))
-        	iPreviousMessage = messageLog().get(iIndex - 1);
-        
-        if (iPreviousMessage != iMsgToAdd)
-        {
-            messageLog().put(iIndex, iMsgToAdd);
-            mCurrentMessageNo += 1;
-        }
-    }
+		switch (prFlag) {
+		case 1:
+			iMsgToAdd = "Server: " + prMessage + "\n";
+			break;
+		case 2:
+			iMsgToAdd = "Admin: " + prMessage + "\n";
+			break;
+		case 3:
+			iMsgToAdd = "Student: " + prMessage + "\n";
+			break;
+		case 4:
+			iMsgToAdd = "Message: " + prMessage + "\n";
+			break;
+		case 5:
+			iMsgToAdd = "Network: " + prMessage + "\n";
+			break;
+		case 6:
+			iMsgToAdd = "Error: " + prMessage + "!" + "\n";
+			break;
+		case 7:
+			iMsgToAdd = "Warning: " + prMessage + "\n";
+			break;
+		case 8:
+			iMsgToAdd = "Question: " + prMessage + "\n";
+			break;
+		case 9:
+			iMsgToAdd = "Answer: " + prMessage + "\n";
+			break;
+		case 10:
+			iMsgToAdd = "> " + prMessage + "\n";
+			break;
+		}
 
-    public void ClearAllMessages()
-    {
-        messageLog().clear();
-    }
+		// To stop a bug as well as limit log spam a message must not be a
+		// duplicate of the message before it
+		// Fix at some point to allow for more accurate results
+		String iPreviousMessage = "";
+		if (messageLog().containsValue(iIndex - 1))
+			iPreviousMessage = messageLog().get(iIndex - 1);
 
-    public boolean IsNewMsgAvailable()
-    {
-        if (messageLog().size() > mLastMessagePosted)
-            return true;
-        else
-            return false;
-    }
+		if (iPreviousMessage != iMsgToAdd) {
+			messageLog().put(iIndex, iMsgToAdd);
+			mCurrentMessageNo += 1;
+		}
+	}
 
-    public boolean IsLogEmpty()
-    {
-        if (messageLog().size() == 0)
-            return true;
-        else
-            return false;
-    }
+	public void clearAllMessages() {
+		messageLog().clear();
+	}
 
-    public HashMap<Integer, String> messageLog() {
+	public boolean isNewMsgAvailable() {
+		if (messageLog().size() > mLastMessagePosted)
+			return true;
+		else
+			return false;
+	}
+
+	public boolean isLogEmpty() {
+		if (messageLog().size() == 0)
+			return true;
+		else
+			return false;
+	}
+
+	public HashMap<Integer, String> messageLog() {
 		return mMessageLog;
 	}
 
-    public void messageLog(HashMap<Integer, String> mMessageLog) {
+	public void messageLog(HashMap<Integer, String> mMessageLog) {
 		this.mMessageLog = mMessageLog;
 	}
 
-    public Queue<ChatMessage> chatMessageQueue() {
+	public Queue<ChatMessage> chatMessageQueue() {
 		return mChatMessageQueue;
 	}
 
-    public void chatMessageQueue(Queue<ChatMessage> mChatMessageQueue) {
+	public void chatMessageQueue(Queue<ChatMessage> mChatMessageQueue) {
 		this.mChatMessageQueue = mChatMessageQueue;
 	}
 }

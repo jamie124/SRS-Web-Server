@@ -2,10 +2,12 @@ package Server;
 
 import javax.crypto.SecretKey;
 
+import Answers.Answer;
 import Answers.AnswerManager;
 import Chat.ChatManager;
 import Chat.ChatMessage;
 import Question.Question;
+import Users.TransferrableUserDetails;
 import Users.UserManager;
 import Users.UserDetails;
 
@@ -75,9 +77,8 @@ public class IOProcessor {
 		this.mEncryption = mEncryption;
 	}
 
-	public IOProcessor(MessageLogger prMessageLogger,
-			UserManager prUserManager, QuestionManager prQuestionManager,
-			AnswerManager prAnswerManager, ChatManager prChatManager) {
+	public IOProcessor(MessageLogger prMessageLogger, UserManager prUserManager, QuestionManager prQuestionManager, AnswerManager prAnswerManager,
+			ChatManager prChatManager) {
 		messageLogger(prMessageLogger);
 		userManager(prUserManager);
 		questionManager(prQuestionManager);
@@ -121,9 +122,9 @@ public class IOProcessor {
 		case 'c':
 			processChatString(prString, prUser);
 			break;
-		case 'Q': // Old question parsing, to be removed
-			processQuestionString(removeFrontCharacters(prString, 2), prUser);
-			break;
+		//case 'Q': // Old question parsing, to be removed
+			//processQuestionString(removeFrontCharacters(prString, 2), prUser);
+			//break;
 		case 'q':
 			processNewQuestion(prString);
 			break;
@@ -134,8 +135,7 @@ public class IOProcessor {
 			processUserDetails(prString, prUser);
 			break;
 		case 'U':
-			processUserDetailsByString(removeFrontCharacters(prString, 2),
-					prUser);
+			processUserDetailsByString(removeFrontCharacters(prString, 2), prUser);
 			break;
 		}
 	}
@@ -208,71 +208,65 @@ public class IOProcessor {
 		// TODO: Proper parsing.
 		// List all questions
 		if (iInstructions == "list questions" || iInstructions == "list q") {
-			mMessageLogger.NewMessage("Questions:",
-					MessageLogger.MESSAGE_SERVER);
+			mMessageLogger.newMessage("Questions:", MessageLogger.MESSAGE_SERVER);
 
-			if (mQuestionManager.QuestionList.Count > 0) {
-				for (int q = 1; q <= mQuestionManager.QuestionList.Count; q++) {
-					iResult += mQuestionManager.QuestionList[q].Question;
-					mMessageLogger.NewMessage(iResult,
-							mMessageLogger.MESSAGE_COMMAND);
+			if (mQuestionManager.questionList().size() > 0) {
+				for (int q = 1; q <= mQuestionManager.questionList().size(); q++) {
+					iResult += mQuestionManager.questionList().get(q).questionString();
+					mMessageLogger.newMessage(iResult, MessageLogger.MESSAGE_COMMAND);
 					iResult = "";
 				}
 			}
 		}
 		// List all users
 		if (iInstructions == "list users" || iInstructions == "list u") {
-			if (mUserManager.UsersOnline.Count > 0) {
-				mMessageLogger.NewMessage("Connected Users:",
-						mMessageLogger.MESSAGE_COMMAND);
+			if (mUserManager.usersOnline().size() > 0) {
+				mMessageLogger.newMessage("Connected Users:", MessageLogger.MESSAGE_COMMAND);
 
-				for (int q = 1; q <= mUserManager.UsersOnline.Count; q++) {
-					iResult += mUserManager.UsersOnline[q].Username;
-					mMessageLogger.NewMessage(iResult,
-							mMessageLogger.MESSAGE_COMMAND);
+				for (int q = 1; q <= mUserManager.usersOnline().size(); q++) {
+					iResult += mUserManager.usersOnline().get(q).username();
+					mMessageLogger.newMessage(iResult, MessageLogger.MESSAGE_COMMAND);
 					iResult = "";
 				}
 			} else {
-				mMessageLogger.NewMessage("No users connected",
-						mMessageLogger.MESSAGE_COMMAND);
+				mMessageLogger.newMessage("No users connected", MessageLogger.MESSAGE_COMMAND);
 			}
 		}
 	}
 
 	private void processChatString(String prString, UserDetails prUser) {
 		String iChatString = prString.replace("\0", "");
-		ChatMessage iNewMessageReceived = mSerialiserMethods
-				.ConvertStringToChatMessage(iChatString);
+
+		// TODO: Reenable chat messages in JSON
+		ChatMessage iNewMessageReceived = new ChatMessage();// mSerialiserMethods.ConvertStringToChatMessage(iChatString);
 
 		mMessageLogger.chatMessageQueue().add(iNewMessageReceived);
-		mMessageLogger.NewMessage(iNewMessageReceived.from() + ": "
-				+ iNewMessageReceived.message(), MessageLogger.MESSAGE_CHAT);
+		mMessageLogger.newMessage(iNewMessageReceived.from() + ": " + iNewMessageReceived.message(), MessageLogger.MESSAGE_CHAT);
 	}
 
 	// New implementation of question input using XML serialisation
 	private void processNewQuestion(String prQuestionArray) {
-		Question iNewQuestion = mSerialiserMethods
-				.ConvertStringToQuestion(prQuestionArray);
+		Question iNewQuestion = new Question();// mSerialiserMethods.ConvertStringToQuestion(prQuestionArray);
 
 		// Set the question ID
 		if (mQuestionManager.questionList().size() > 0)
-			iNewQuestion.QuestionID = mQuestionManager.get
+			iNewQuestion.questionID(mQuestionManager.getLargestQuestionKey() + 1);
 		else
-			iNewQuestion.QuestionID = 0;
+			iNewQuestion.questionID(0);
 
 		// Determine whether the question is being added or modified
 		// TODO: Implement a better system to do this
-		if (mQuestionManager.IsQuestionNameInUse(iNewQuestion.Question)) {
+		if (mQuestionManager.isQuestionStringInUse(iNewQuestion.questionString())) {
 			// Remove the old question and add the new one
 			mQuestionManager.removeQuestion(iNewQuestion);
 			mQuestionManager.addNewQuestion(iNewQuestion);
 		}
 		mQuestionManager.addNewQuestion(iNewQuestion);
-		mMessageLogger.NewMessage(iNewQuestion.questionString() + " added",
-				mMessageLogger.MESSAGE_QUESTION);
+		mMessageLogger.newMessage(iNewQuestion.questionString() + " added", MessageLogger.MESSAGE_QUESTION);
 
 	}
 
+	// TODO: Add JSON parsing for answers
 	private void processAnswerString(String prString, UserDetails prUser) {
 		char[] iAnswerArray = new char[150]; // The max char size for all
 												// answers is currently 150
@@ -282,56 +276,33 @@ public class IOProcessor {
 		int iCurrPos = 0;
 		Answer iNewAnswer = new Answer();
 
-		if (AnswerManager().ReceiveResponses) {
-			for (int i = 0; i < prString.Length; i++) {
-				if (prString[i] != ';') {
-					if (!iQuestionIDFound) {
-						if (prString[i] != '|') {
-							iQuestionIDArray[iCurrPos] = prString[i];
-							iCurrPos++;
-						} else {
-							iQuestionIDFound = true;
-							iCurrPos = 0;
-						}
-					} else {
-						if (!iAnswerFound) {
-							if (prString[i] != '|') {
-								iAnswerArray[iCurrPos] = prString[i];
-								iCurrPos++;
-							} else {
-								iAnswerFound = true;
-							}
-						}
-					}
-				} else {
-					break;
-				}
-			}
-			iNewAnswer.Username = prUser.Username;
-			iNewAnswer.AnswerString = new String(iAnswerArray)
-					.Replace("\0", "");
-			iNewAnswer.QuestionID = Convert
-					.ToInt32(new String(iQuestionIDArray).Replace("\0", ""));
-			iNewAnswer.AnswerSent = false;
+		if (mAnswerManager.receiveResponses()) {
+			/*
+			 * for (int i = 0; i < prString.length(); i++) { if (prString[i] !=
+			 * ';') { if (!iQuestionIDFound) { if (prString[i] != '|') {
+			 * iQuestionIDArray[iCurrPos] = prString[i]; iCurrPos++; } else {
+			 * iQuestionIDFound = true; iCurrPos = 0; } } else { if
+			 * (!iAnswerFound) { if (prString[i] != '|') {
+			 * iAnswerArray[iCurrPos] = prString[i]; iCurrPos++; } else {
+			 * iAnswerFound = true; } } } } else { break; } }
+			 */
+			iNewAnswer.username(prUser.username());
+			iNewAnswer.answer(new String(iAnswerArray).replace("\0", ""));
+			iNewAnswer.questionID(Integer.parseInt(new String(iQuestionIDArray).replace("\0", "")));
+			iNewAnswer.answerSent(false);
 
-			AnswerManager().AddAnswer(iNewAnswer);
+			mAnswerManager.addAnswer(iNewAnswer);
 
-			mMessageLogger.NewMessage(
-					prUser.Username
-							+ " answered "
-							+ iNewAnswer.AnswerString
-							+ " for "
-							+ QuestionManager().GetQuestionStringByID(
-									iNewAnswer.QuestionID),
-					mMessageLogger.MESSAGE_ANSWER);
+			mMessageLogger.newMessage(
+					prUser.username() + " answered " + iNewAnswer.answer() + " for "
+							+ mQuestionManager.getQuestionStringByID(iNewAnswer.questionID()), MessageLogger.MESSAGE_ANSWER);
 		} else {
-			mMessageLogger.NewMessage("Response received after Time",
-					mMessageLogger.MESSAGE_SERVER);
+			mMessageLogger.newMessage("Response received after Time", MessageLogger.MESSAGE_SERVER);
 		}
 	}
 
 	// Old String based user String
-	private void processUserDetailsByString(String prString, userDetails prUser) {
+	private void processUserDetailsByString(String prString, UserDetails prUser) {
 		int iPos = 0;
 		int iCurrPos = 0;
 		int iSection = 0;
@@ -342,147 +313,92 @@ public class IOProcessor {
 		iDeviceOSArray = new char[15];
 		iUserRoleArray = new char[8];
 
-		// Changed to allow for easier addition of information
-		for (int i = 0; i < prString.Length; i++) {
-			if (prString[i] != ';') {
-				switch (iSection) {
-				case 0: // User Role
-					if (prString[i] != '|') {
-						iUserRoleArray[iCurrPos] = prString[i];
-						iCurrPos++;
-					} else {
-						iCurrPos = 0;
-						iSection++;
-					}
-					break;
-				case 1: // Username
-					if (prString[i] != '|') {
-						iUsernameArray[iCurrPos] = prString[i];
-						iCurrPos++;
-					} else {
-						iSection++;
-						iCurrPos = 0;
-					}
-					break;
-				case 2: // Device OS
-					if (prString[i] != '|') {
-						iDeviceOSArray[iCurrPos] = prString[i];
-						iCurrPos++;
-					} else {
-						iSection++;
-						iCurrPos = 0;
-					}
-					break;
-				}
-			} else {
-				break;
-			}
-		}
-		prUser.UserRole = new String(iUserRoleArray).Replace("\0", "");
-		prUser.DeviceOS = new String(iDeviceOSArray).Replace("\0", "");
-		prUser.Username = new String(iUsernameArray).Replace("\0", "");
-		prUser.CurrQuestion = new question();
-		if (prUser.UserRole != "Tutor") {
-			mMessageLogger.NewMessage(prUser.Username + " joined the server",
-					mMessageLogger.MESSAGE_STUDENT);
+		/*
+		 * // Changed to allow for easier addition of information for (int i =
+		 * 0; i < prString.length(); i++) { if (prString[i] != ';') { switch
+		 * (iSection) { case 0: // User Role if (prString[i] != '|') {
+		 * iUserRoleArray[iCurrPos] = prString[i]; iCurrPos++; } else { iCurrPos
+		 * = 0; iSection++; } break; case 1: // Username if (prString[i] != '|')
+		 * { iUsernameArray[iCurrPos] = prString[i]; iCurrPos++; } else {
+		 * iSection++; iCurrPos = 0; } break; case 2: // Device OS if
+		 * (prString[i] != '|') { iDeviceOSArray[iCurrPos] = prString[i];
+		 * iCurrPos++; } else { iSection++; iCurrPos = 0; } break; } } else {
+		 * break; } }
+		 */
+		prUser.userRole(new String(iUserRoleArray).replace("\0", ""));
+		prUser.deviceOS(new String(iDeviceOSArray).replace("\0", ""));
+		prUser.username(new String(iUsernameArray).replace("\0", ""));
+		prUser.currQuestion(new Question());
+		if (!prUser.userRole().equals("Tutor")) {
+			mMessageLogger.newMessage(prUser.username() + " joined the server", MessageLogger.MESSAGE_STUDENT);
 		} else {
-			mMessageLogger.NewMessage(prUser.Username + " joined the server",
-					mMessageLogger.MESSAGE_TUTOR);
+			mMessageLogger.newMessage(prUser.username() + " joined the server", MessageLogger.MESSAGE_TUTOR);
 		}
 
 		// mUserManager.AddNewUser(prUser);
 		// mQuestionManager.SendQuestionListToTutors();
 
-		RespondToConnection(prUser);
+		respondToConnection(prUser);
 	}
 
 	// New XML serialisation method for processing user details
-	private void processUserDetails(String prString, userDetails prUser) {
-		transferrableUserDetails iUserDetailsFromClient = mSerialiserMethods
-				.ConvertStringToUserDetails(prString);
+	// TODO: Convert to JSON
+	private void processUserDetails(String prString, UserDetails prUser) {
+		TransferrableUserDetails iUserDetailsFromClient = new TransferrableUserDetails();// mSerialiserMethods.ConvertStringToUserDetails(prString);
 
-		prUser.UserRole = iUserDetailsFromClient.UserRole;
-		prUser.DeviceOS = iUserDetailsFromClient.DeviceOS;
-		prUser.Username = iUserDetailsFromClient.Username;
-		if (iUserDetailsFromClient.Password != "")
-			prUser.Password = encryption().Decrypt(
-					iUserDetailsFromClient.Password, "P@ssword1");
+		prUser.userRole(iUserDetailsFromClient.userRole());
+		prUser.deviceOS(iUserDetailsFromClient.deviceOS());
+		prUser.username(iUserDetailsFromClient.username());
+		if (!iUserDetailsFromClient.password().equals(""))
+			prUser.password(encryption().decrypt(iUserDetailsFromClient.password()));
 
-		prUser.CurrQuestion = new question();
+		prUser.currQuestion(new Question());
 
-		if (prUser.UserRole != "Tutor") {
-			mMessageLogger.NewMessage(prUser.Username + " joined the server",
-					mMessageLogger.MESSAGE_STUDENT);
+		if (!prUser.userRole().equals("Tutor")) {
+			mMessageLogger.newMessage(prUser.username() + " joined the server", MessageLogger.MESSAGE_STUDENT);
 		} else {
-			mMessageLogger.NewMessage(prUser.Username + " joined the server",
-					mMessageLogger.MESSAGE_TUTOR);
+			mMessageLogger.newMessage(prUser.username() + " joined the server", MessageLogger.MESSAGE_TUTOR);
 		}
 
-		RespondToConnection(prUser);
+		respondToConnection(prUser);
 	}
 
-	private void RespondToConnection(userDetails prUser) {
+	private void respondToConnection(UserDetails prUser) {
 		// Make sure the user name is not in use.
-		if (UserManager().IsUsernameAvailable(prUser.Username)) {
+		if (mUserManager.isUsernameAvailable(prUser.username())) {
 			// Check if the user is a tutor or student
-			if (UserManager().IsUserATutor(prUser.Username)) {
+			if (mUserManager.isUserATutor(prUser.username())) {
 				// Check password
-				if (UserManager().VerifyPassword(prUser)) {
-					prUser.Connected = true;
-					UserManager().AddNewUser(prUser);
-					QuestionManager().SendQuestionListToTutors();
+				if (mUserManager.verifyPassword(prUser)) {
+					prUser.connected(true);
+					mUserManager.addNewUser(prUser);
+					mQuestionManager.sendQuestionListToTutors();
 
 					// Send a response to client
-					SendConnectionResponse(prUser.Client, "TUTORCONNECTED");
+					sendConnectionResponse(prUser.username(), "TUTORCONNECTED");
 				} else {
-					prUser.Connected = false;
+					prUser.connected(false);
 					// Send a response to client
-					SendConnectionResponse(prUser.Client, "INCORRECTPASS");
+					sendConnectionResponse(prUser.username(), "INCORRECTPASS");
 				}
 			} else {
-				prUser.Connected = true;
-				UserManager().AddNewUser(prUser);
-				QuestionManager().SendQuestionListToTutors();
+				prUser.connected(true);
+				mUserManager.addNewUser(prUser);
+				mQuestionManager.sendQuestionListToTutors();
 
 				// Send a response to client
-				SendConnectionResponse(prUser.Client, "STUDENTCONNECTED");
+				sendConnectionResponse(prUser.username(), "STUDENTCONNECTED");
 			}
 
 		} else {
-			prUser.Connected = false;
+			prUser.connected(false);
 			// Send a response to client
-			SendConnectionResponse(prUser.Client, "USERNAMETAKEN");
+			sendConnectionResponse(prUser.username(), "USERNAMETAKEN");
 		}
 	}
 
 	// Send connection response to client
-	private void SendConnectionResponse(object prClient,
-			String prConnectionMessage) {
-		NetworkStream iClientStream;
-		TcpClient iClient;
-
-		char[] iData = System.Text.Encoding.ASCII
-				.GetChars(System.Text.Encoding.ASCII
-						.GetBytes(prConnectionMessage));
-		byte[] iConnectionMessage = System.Text.Encoding.ASCII.GetBytes(iData);
-
-		iClient = (TcpClient) prClient;
-
-		// Make sure the client is still connected
-		iClientStream = iClient.GetStream();
-
-		if (iConnectionMessage != null) {
-			// Seems to have fixed, or greatly reduced the chance that the
-			// response gets lost.
-			while (true) {
-				if (iClientStream.CanWrite) {
-					iClientStream.Write(iConnectionMessage, 0,
-							iConnectionMessage.Length);
-					break;
-				}
-			}
-		}
-
-		Array.Clear(iConnectionMessage, 0, iConnectionMessage.Length);
+	private void sendConnectionResponse(String userName, String prConnectionMessage) {
+		// TODO Add stuff here
 	}
 }

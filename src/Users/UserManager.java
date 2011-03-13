@@ -9,7 +9,7 @@ import Server.MessageLogger;
 public class UserManager {
 
 	private MessageLogger mMessageLogger;
-	private XmlHandler mXmlHandler;
+	//private XmlHandler mXmlHandler;
 
 	private int mMaxUserKey;
 
@@ -22,7 +22,7 @@ public class UserManager {
 		mUsersOnline = new HashMap<Integer, UserDetails>();
 		mMessageLogger = prMessageLogger;
 
-		mXmlHandler = new XmlHandler();
+		//mXmlHandler = new XmlHandler();
 	}
 
 	public int maxUserKey() {
@@ -49,9 +49,9 @@ public class UserManager {
 		this.mUserDetailsToTransfer = mUserDetailsToTransfer;
 	}
 
-	public boolean LoadTutors(String prFilename) {
+	public boolean loadTutors(String prFilename) {
 		// Attempt to load settings from file
-		mTutors = mXmlHandler.LoadUserSettings(prFilename);
+		//mTutors = mXmlHandler.LoadUserSettings(prFilename);
 		if (mTutors != null) {
 			return true;
 		} else
@@ -59,7 +59,7 @@ public class UserManager {
 	}
 
 	// Sets a question for each user
-	public void SetQuestions(Question prQuestion) {
+	public void setQuestions(Question prQuestion) {
 		int i = 0;
 
 		if (mUsersOnline.size() > 0) {
@@ -86,12 +86,23 @@ public class UserManager {
 		}
 	}
 
-	// Get the largest key in the user dictionary
+	// Get the largest key in the user hashmap
 	private int getLargestUserKey() {
-		int iCurrentLargestKey = 0;
 		int key = 0;
 
-		for (int keyString : mUsersOnline.keySet()) {
+		for (int userKey : mUsersOnline.keySet()) {
+			if (userKey > key)
+				key = userKey;
+		}
+
+		return key;
+	}
+
+	// Get the largest key in the tutor hashmap
+	private int getLargestTutorKey() {
+		int key = 0;
+
+		for (int keyString : mTutors.keySet()) {
 			if (keyString > key)
 				key = keyString;
 		}
@@ -133,7 +144,7 @@ public class UserManager {
 		while (i <= iNumUsers) {
 			// Only send the list to a tutor
 			if (mUsersOnline.containsKey(i)) {
-				if (mUsersOnline.get(i).userRole() == "Tutor") {
+				if (mUsersOnline.get(i).userRole().equals("Tutor")) {
 					mUsersOnline.get(i).userListRequested(true);
 				}
 			}
@@ -146,7 +157,7 @@ public class UserManager {
 	public boolean isUserATutor(String prUsername) {
 		if (mTutors != null) {
 			for (UserDetails userDetails : mUsersOnline.values()) {
-				if (userDetails.userRole() == "Tutor")
+				if (userDetails.userRole().equals("Tutor"))
 					return true;
 			}
 		}
@@ -154,175 +165,101 @@ public class UserManager {
 	}
 
 	// Check the password against a user
-	public boolean VerifyPassword(userDetails prUser)
-    {
-        foreach (KeyValuePair<int, TutorDetails> iUser in mTutors)
-        {
-            // Find the username
-            if (iUser.Value.Name == prUser.Username)
-            {
-                // Check the pass
-                if (iUser.Value.Password == prUser.Password)
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
+	public boolean verifyPassword(UserDetails prUser) {
+		for (UserDetails userDetails : mUsersOnline.values()) {
+			if (userDetails.password().equals(prUser.password()))
+				return true;
+		}
+		return false;
+	}
 
 	// Get number of users online
-	public int GetNumOfUsers() {
-		int iCount;
-		// mThreadMutex.WaitOne();
-		iCount = usersOnline().Count();
-		// mThreadMutex.ReleaseMutex();
-
-		return iCount;
+	public int getNumOfUsers() {
+		return usersOnline().size();
 	}
 
-	// Gets a new free ID
-	public int GetNewUserID(int prExtraIndex) {
-		if (usersOnline().Count == 0)
-			return 0;
+	public void addNewUser(UserDetails prUser) {
+		int iNewID = getLargestUserKey() + 1;
+
+		if (mUsersOnline.size() == 0)
+			mUsersOnline.put(1, prUser);
 		else
-			return usersOnline().Last().Key + 1 + prExtraIndex;
-	}
-
-	public void AddNewUser(userDetails prUser) {
-		int iNewID = GetNewUserID(0);
-		int iExtra = 0;
-
-		// Make sure the generated ID is not already in use
-		while (true) {
-			if (usersOnline().ContainsKey(iNewID)) {
-				iExtra++;
-				iNewID = GetNewUserID(iExtra);
-			} else
-				break;
-		}
-
-		usersOnline().Add(iNewID, prUser);
+			mUsersOnline.put(prUser.id(), prUser);
 
 		// Update max user key
-		maxUserKey(GetLargestKeyUserDict());
+		maxUserKey(iNewID);
 
-		SendUserListToTutors();
+		sendUserListToTutors();
 	}
 
 	// Add a new tutor to the list
-	public void AddTutor(TutorDetails prTutor)
-    {
-        if (mTutors == null)
-            mTutors = new Dictionary<int, TutorDetails>();
+	public void addTutor(TutorDetails prTutor) {
+		if (mTutors == null)
+			mTutors = new HashMap<Integer, TutorDetails>();
 
-        if (mTutors.Count == 0)
-            mTutors.Add(0, prTutor);
-        else
-            mTutors.Add(mTutors.Last().Key + 1, prTutor);
-    }
+		if (mTutors.size() == 0)
+			mTutors.put(1, prTutor);
+		else
+			mTutors.put(prTutor.id(), prTutor);
+	}
 
 	// Remove a tutor from the list
-	public void RemoveTutor(String prTutorName)
-    {
-        int iTutorID = 0;
+	public void removeTutor(String prTutorName) {
+		int iTutorID = 0;
 
-        foreach (KeyValuePair<int, TutorDetails> iTutor in mTutors)
-        {
-            if (iTutor.Value.Name == prTutorName)
-            {
-                iTutorID = iTutor.Key;
-                break;
-            }
-        }
+		iTutorID = getTutorIDUsingName(prTutorName);
 
-        mTutors.Remove(iTutorID);
-    }
-
-	// Gets the tutor object for the provided name
-	public TutorDetails GetTutorDetails(String prName)
-    {
-        foreach (KeyValuePair<int, TutorDetails> iTutor in mTutors)
-        {
-            if (iTutor.Value.Name == prName)
-                return iTutor.Value;
-        }
-        return null;
-    }
+		if (iTutorID != -1)
+			mTutors.remove(iTutorID);
+	}
 
 	// Remove a user
-	public void RemoveUser(TcpClient prClient)
-    {
-        // Find the key
-        int iKey = 0;
+	public void removeUser(String prUserName) {
+		int iUserID = 0;
 
-        foreach (KeyValuePair<int, userDetails> iUser in mUsersOnline)
-        {
-            if (iUser.Value.Client == prClient)
-            {
-                iKey = iUser.Key;
-                break;
-            }
-        }
+		iUserID = getUserIDUsingName(prUserName);
 
-        //mThreadMutex.WaitOne();
-        lock (mLock)
-        {
-            mUsersOnline.Remove(iKey);
-        }
-        
+		if (iUserID != -1)
+			mTutors.remove(iUserID);
+	}
 
-        //mThreadMutex.ReleaseMutex();
-        
-    }
+	private int getTutorIDUsingName(String prTutorName) {
+		for (TutorDetails tutor : mTutors.values()) {
+			if (tutor.name().equals(prTutorName))
+				return tutor.id();
+		}
+		return -1;
+	}
 
+	private int getUserIDUsingName(String prUserName) {
+		for (UserDetails user : mUsersOnline.values()) {
+			if (user.username().equals(prUserName))
+				return user.id();
+		}
+		return -1;
+	}
+
+	// Gets the tutor object for the provided name
+	public TutorDetails getTutorDetails(String prTutorName) {
+		for (TutorDetails tutor : mTutors.values()) {
+			if (tutor.name().equals(prTutorName))
+				return tutor;
+		}
+		return null;
+	}
+
+	// Remove a user
 	// Kick all connected users from server
-	public void KickUsers()
-    {
-        //mThreadMutex.WaitOne();
-        lock (mLock)
-        {
-            mUsersOnline.Clear();
-        }
-        //mThreadMutex.ReleaseMutex();
-    }
+	public void kickUsers() {
+		mUsersOnline.clear();
+	}
 
-	// Gets the username for the given client
-	public String GetUsernameByClient(TcpClient prClient)
-    {
-        foreach (KeyValuePair<int, userDetails> iUser in mUsersOnline)
-        {
-            if (iUser.Value.Client == prClient)
-            {
-                return iUser.Value.Username;
-            }
-        }
-        return "Unknown";
-    }
-
-	// Gets the user details for the given client
-	public userDetails GetUserByClient(TcpClient prClient)
-    {
-        foreach (KeyValuePair<int, userDetails> iUser in mUsersOnline)
-        {
-            if (iUser.Value.Client == prClient)
-            {
-                return iUser.Value;
-            }
-        }
-        return new userDetails();
-    }
-
-	// Check if the username is available
-	public boolean IsUsernameAvailable(String prUsername)
-    {
-        foreach (KeyValuePair<int, userDetails> iUser in mUsersOnline)
-        {
-            if (iUser.Value.Username == prUsername)
-            {
-                return false;
-            }
-        }
-        return true;
-    }
+	// Check if the user name is available
+	public boolean isUsernameAvailable(String prUsername) {
+		for (UserDetails user : mUsersOnline.values()) {
+			if (user.username().equals(prUsername))
+				return false;
+		}
+		return true;
+	}
 }
