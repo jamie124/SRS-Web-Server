@@ -85,10 +85,23 @@ public class IOProcessor {
 		answerManager(prAnswerManager);
 		chatManager(prChatManager);
 
-		// TODO: Move the password to a more secure location
+		// TODO: This shit is insecure
 		encryption(new Encryption("P@ssword1"));
 	}
 
+	// Initialise without providing classes
+	// I have a feeling this is a bad way of doing this
+	public IOProcessor(){
+		messageLogger(new MessageLogger());
+		userManager(new UserManager(mMessageLogger));
+		questionManager(new QuestionManager(mUserManager));
+		answerManager(new AnswerManager());
+		chatManager(new ChatManager());
+
+		// TODO: This shit is insecure
+		encryption(new Encryption("P@ssword1"));
+	}
+	
 	public String removeFrontCharacters(String prString, int prNumToRemove) {
 		int iCount = 0;
 		int iStringLength = prString.length();
@@ -203,7 +216,7 @@ public class IOProcessor {
 
 		iInstructions = new String(iStringArray).replace("\0", "");
 
-		iParser.ParseString(iInstructions);
+		iParser.parseString(iInstructions);
 
 		// TODO: Proper parsing.
 		// List all questions

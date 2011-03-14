@@ -9,32 +9,51 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import Server.IOProcessor;
+
 /**
  * Servlet implementation class Server
  */
 @WebServlet("/Server")
 public class Server extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-       
-    /**
-     * @see HttpServlet#HttpServlet()
-     */
-    public Server() {
-        super();
-        // TODO Auto-generated constructor stub
-    }
+
+	private IOProcessor ioProcessor;
 
 	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 * @see HttpServlet#HttpServlet()
 	 */
-	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-	    PrintWriter out = response.getWriter();
-	    out.println("Hello World");
+	public Server() {
+		super();
+
+		// IOProcessor is main class for running the server
+		ioProcessor = new IOProcessor();
 	}
 
 	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse
+	 *      response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+		response.setContentType("text/plain");
+		PrintWriter out = response.getWriter();
+		
+		String userStatus = "";
+
+		userStatus = request.getParameter("userStatus");
+       
+        
+		if (userStatus.equals("numberOfUsers")) {
+			out.println(ioProcessor.userManager().getNumOfUsers());
+		} else if (userStatus.equals("usersList")){
+			out.println(ioProcessor.userManager().convertUsersToJSON());
+		}
+	}
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse
+	 *      response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub

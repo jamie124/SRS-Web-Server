@@ -91,11 +91,21 @@ public class Instruction
 
 
 	public String isQuestionName() {
-		return mQuestionName;
+		return questionName();
 	}
 
 
 	public void isQuestionName(String mQuestionName) {
+		this.questionName(mQuestionName);
+	}
+
+
+	public String questionName() {
+		return mQuestionName;
+	}
+
+
+	public void questionName(String mQuestionName) {
 		this.mQuestionName = mQuestionName;
 	}
 }

@@ -81,10 +81,10 @@ public class UserDetails
 	public void currQuestion(Question mCurrQuestion) {
 		this.mCurrQuestion = mCurrQuestion;
 	}
-	public int id() {
+	public int userID() {
 		return mID;
 	}
-	public void id(int mID) {
+	public void userID(int mID) {
 		this.mID = mID;
 	}
 	public boolean connected() {

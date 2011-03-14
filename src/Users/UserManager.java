@@ -2,6 +2,7 @@ package Users;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import org.json.*;
 
 import Question.Question;
 import Server.MessageLogger;
@@ -9,7 +10,7 @@ import Server.MessageLogger;
 public class UserManager {
 
 	private MessageLogger mMessageLogger;
-	//private XmlHandler mXmlHandler;
+	// private XmlHandler mXmlHandler;
 
 	private int mMaxUserKey;
 
@@ -22,7 +23,25 @@ public class UserManager {
 		mUsersOnline = new HashMap<Integer, UserDetails>();
 		mMessageLogger = prMessageLogger;
 
-		//mXmlHandler = new XmlHandler();
+		// Demo user to help with server testing
+		UserDetails testUser = new UserDetails();
+		testUser.userID(1);
+		testUser.username("James");
+		testUser.userClass("");
+		testUser.deviceOS("iOS");
+		testUser.userRole("Student");
+
+		addNewUser(testUser);
+		
+		UserDetails testUser2 = new UserDetails();
+		testUser2.userID(2);
+		testUser2.username("Test");
+		testUser2.userClass("");
+		testUser2.deviceOS("Win7");
+		testUser2.userRole("Student");
+
+		addNewUser(testUser2);
+		// mXmlHandler = new XmlHandler();
 	}
 
 	public int maxUserKey() {
@@ -51,7 +70,7 @@ public class UserManager {
 
 	public boolean loadTutors(String prFilename) {
 		// Attempt to load settings from file
-		//mTutors = mXmlHandler.LoadUserSettings(prFilename);
+		// mTutors = mXmlHandler.LoadUserSettings(prFilename);
 		if (mTutors != null) {
 			return true;
 		} else
@@ -184,7 +203,7 @@ public class UserManager {
 		if (mUsersOnline.size() == 0)
 			mUsersOnline.put(1, prUser);
 		else
-			mUsersOnline.put(prUser.id(), prUser);
+			mUsersOnline.put(prUser.userID(), prUser);
 
 		// Update max user key
 		maxUserKey(iNewID);
@@ -234,7 +253,7 @@ public class UserManager {
 	private int getUserIDUsingName(String prUserName) {
 		for (UserDetails user : mUsersOnline.values()) {
 			if (user.username().equals(prUserName))
-				return user.id();
+				return user.userID();
 		}
 		return -1;
 	}
@@ -261,5 +280,21 @@ public class UserManager {
 				return false;
 		}
 		return true;
+	}
+
+	public JSONObject convertUsersToJSON() {
+		JSONObject usersJSON = new JSONObject();
+		
+		for (UserDetails u : mUsersOnline.values()){
+			JSONObject user = new JSONObject();
+			
+			user.put("userID", u.userID());
+			user.put("userName", u.username());
+			user.put("deviceOS", u.deviceOS());
+			user.put("isConnected", u.connected());
+			
+			usersJSON.put(Integer.toString(u.userID()), user);
+		}
+		return usersJSON;
 	}
 }

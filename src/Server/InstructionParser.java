@@ -1,124 +1,102 @@
 package Server;
 
 import Answers.AnswerManager;
+import Question.Question;
 import Users.UserManager;
 
 // Parser is extremely simple and has been designed as I go along. A lot of functionality is hardcoded 
 // and the method is likely not an efficient one.
-public class InstructionParser
-{
-    QuestionManager mQuestionManager;
-    AnswerManager mAnswerManager;
+public class InstructionParser {
+	QuestionManager mQuestionManager;
+	AnswerManager mAnswerManager;
 
-    UserManager mUserManager;
-    String[] mInstructionArray = new String[8];     // Holds all the commands, currently 8 max
+	UserManager mUserManager;
+	String[] mInstructionArray = new String[8]; // Holds all the commands,
+												// currently 8 max
 
-    public InstructionParser(IOProcessor prIOProcessor)
-    {
-        mQuestionManager = prIOProcessor.questionManager();
-        mUserManager = prIOProcessor.userManager();
-        mAnswerManager = prIOProcessor.answerManager();
-    }
+	public InstructionParser(IOProcessor prIOProcessor) {
+		mQuestionManager = prIOProcessor.questionManager();
+		mUserManager = prIOProcessor.userManager();
+		mAnswerManager = prIOProcessor.answerManager();
+	}
 
-    // Start parsing the String
-    // First pass looks for each command
-    public void ParseString(String prInstructionString)
-    {
-        Instruction iNewInstructions = new Instruction();
+	// Start parsing the String
+	// First pass looks for each command
+	public void parseString(String prInstructionString) {
+		Instruction iNewInstructions = new Instruction();
 
-        // Split the String into an array
-        mInstructionArray = prInstructionString.split(",");
+		// Split the String into an array
+		mInstructionArray = prInstructionString.split(",");
 
-        foreach (String iCommand in mInstructionArray){
-            switch (iCommand.ToUpper())
-            {
-                case "SEND":
-                    iNewInstructions.IsSending = true;
-                    break;
-                case "QUESTION":
-                    iNewInstructions.IsQuestion = true;
-                    break;
-                case "ALL":
-                    iNewInstructions.IsSendingToAll = true;
-                    break;
-                case "TIMEUP":
-                    iNewInstructions.IsResponseTimeUp = true;
-                    break;
-                case "DELETE":
-                    iNewInstructions.IsDeleting = true;
-                    break;
-                case "MODIFY":
-                    iNewInstructions.IsModifying = true;
-                    break;
-                default:
-                    iNewInstructions.QuestionName = iCommand.Replace("\"", "");
-                    break;
-            }
-        }
-        ExecuteInstructions(iNewInstructions);
-    }
+		for (String iCommand : mInstructionArray) {
+			String iUpperCaseCommand = iCommand.toUpperCase();
 
-    // Executes the instructions
-    private void ExecuteInstructions(Instruction prInstructions)
-    {
-        // Sending instructions
-        if (prInstructions.IsSending)
-        {
-            SendingInstructions(prInstructions);
-        }
-        else if (prInstructions.IsDeleting)
-        {
-            DeleteInstructions(prInstructions);
-        }
-        else if (prInstructions.IsResponseTimeUp)
-        {
-            StopReceivingResponses();
-        }
-    }
+			if (iUpperCaseCommand.equals("SEND")) {
+				iNewInstructions.isSending(true);
+			} else if (iUpperCaseCommand.equals("QUESTION")) {
+				iNewInstructions.isQuestion(true);
+			} else if (iUpperCaseCommand.equals("ALL")) {
+				iNewInstructions.isSendingToAll(true);
+			} else if (iUpperCaseCommand.equals("TIMEUP")) {
+				iNewInstructions.isResponseTimeUp(true);
+			} else if (iUpperCaseCommand.equals("DELETE")) {
+				iNewInstructions.isDeleting(true);
+			} else if (iUpperCaseCommand.equals("MODIFY")) {
+				iNewInstructions.isModifying(true);
+			} else {
+				iNewInstructions.questionName(iCommand.replace("\"", ""));
+			}
+		}
+		executeInstructions(iNewInstructions);
+	}
 
-    // Instructions related to sending stuff
-    private void SendingInstructions(Instruction prInstructions)
-    {
-        question iQuestionToSend;
+	// Executes the instructions
+	private void executeInstructions(Instruction prInstructions) {
+		// Sending instructions
+		if (prInstructions.isSending()) {
+			sendingInstructions(prInstructions);
+		} else if (prInstructions.isDeleting()) {
+			deleteInstructions(prInstructions);
+		} else if (prInstructions.isResponseTimeUp()) {
+			stopReceivingResponses();
+		}
+	}
 
-        // Send a question and get ready to recieve responses
-        if (prInstructions.QuestionName != "")
-        {
-            iQuestionToSend = mQuestionManager.GetQuestionByName(prInstructions.QuestionName);
+	// Instructions related to sending stuff
+	private void sendingInstructions(Instruction prInstructions) {
+		Question iQuestionToSend;
 
-            if (iQuestionToSend != null)
-            {
-                if (prInstructions.IsSendingToAll)
-                {
-                    mAnswerManager.ClearAnswerList();           // Clear existing answers
-                    mUserManager.SetQuestions(iQuestionToSend); // Queue the question to be sent
-                    mAnswerManager.ReceiveResponses = true;     // Allow responses to be recieved
-                }
-            }
-        }
-    }
+		// Send a question and get ready to receive responses
+		if (!prInstructions.questionName().equals("")) {
+			iQuestionToSend = mQuestionManager.getQuestionByNameString(prInstructions.questionName());
 
-    // Instructions for deleting a question
-    private void DeleteInstructions(Instruction prInstructions)
-    {
-        question iQuestionToDelete;
+			if (iQuestionToSend != null) {
+				if (prInstructions.isSendingToAll()) {
+					mAnswerManager.clearAnswerList(); // Clear existing answers
+					mUserManager.setQuestions(iQuestionToSend); 
+					mAnswerManager.receiveResponses(true); // Allow responses to be received
+				}
+			}
+		}
+	}
 
-        if (prInstructions.QuestionName != "")
-        {
-            iQuestionToDelete = mQuestionManager.GetQuestionByName(prInstructions.QuestionName);
+	// Instructions for deleting a question
+	private void deleteInstructions(Instruction prInstructions) {
+		Question iQuestionToDelete;
 
-            if (iQuestionToDelete != null)
-            {
-                mQuestionManager.DeleteQuestion(iQuestionToDelete);
-            }
-        }
+		if (!prInstructions.questionName().equals("")) {
+			iQuestionToDelete = mQuestionManager.getQuestionByNameString(prInstructions.questionName());
 
-        mQuestionManager.SendQuestionListToTutors();
-    }
+			if (iQuestionToDelete != null) {
+				mQuestionManager.removeQuestion(iQuestionToDelete);
+			}
+		}
 
-    // Stop the server from receiving answers from students
-    private void StopReceivingResponses()
-    {
-        mAnswerManager.ReceiveResponses = false;
-    }
+		mQuestionManager.sendQuestionListToTutors();
+	}
+
+	// Stop the server from receiving answers from students
+	private void stopReceivingResponses() {
+		mAnswerManager.receiveResponses(false);
+	}
 }
