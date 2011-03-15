@@ -38,15 +38,14 @@ public class Server extends HttpServlet {
 
 		response.setContentType("text/plain");
 		PrintWriter out = response.getWriter();
-		
+
 		String userStatus = "";
 
 		userStatus = request.getParameter("userStatus");
-       
-        
+
 		if (userStatus.equals("numberOfUsers")) {
 			out.println(ioProcessor.userManager().getNumOfUsers());
-		} else if (userStatus.equals("usersList")){
+		} else if (userStatus.equals("usersList")) {
 			out.println(ioProcessor.userManager().convertUsersToJSON());
 		}
 	}
@@ -56,7 +55,13 @@ public class Server extends HttpServlet {
 	 *      response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
+		response.setContentType("text/plain");
+		PrintWriter out = response.getWriter();
+
+		String addUser = "";
+
+		addUser = request.getParameter("addUser");
+
 	}
 
 }
