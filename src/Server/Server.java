@@ -43,10 +43,14 @@ public class Server extends HttpServlet {
 
 		userStatus = request.getParameter("userStatus");
 
-		if (userStatus.equals("numberOfUsers")) {
-			out.println(ioProcessor.userManager().getNumOfUsers());
-		} else if (userStatus.equals("usersList")) {
-			out.println(ioProcessor.userManager().convertUsersToJSON());
+		ioProcessor.parseNewRequest(request, response);
+
+		if (userStatus != null) {
+			if (userStatus.equals("numberOfUsers")) {
+				out.println(ioProcessor.userManager().getNumOfUsers());
+			} else if (userStatus.equals("usersList")) {
+				out.println(ioProcessor.userManager().convertUsersToJSON());
+			}
 		}
 	}
 

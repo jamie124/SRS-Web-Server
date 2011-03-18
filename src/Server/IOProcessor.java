@@ -1,6 +1,11 @@
 package Server;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+
 import javax.crypto.SecretKey;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import Answers.Answer;
 import Answers.AnswerManager;
@@ -91,7 +96,7 @@ public class IOProcessor {
 
 	// Initialise without providing classes
 	// I have a feeling this is a bad way of doing this
-	public IOProcessor(){
+	public IOProcessor() {
 		messageLogger(new MessageLogger());
 		userManager(new UserManager(mMessageLogger));
 		questionManager(new QuestionManager(mUserManager));
@@ -101,7 +106,7 @@ public class IOProcessor {
 		// TODO: This shit is insecure
 		encryption(new Encryption("P@ssword1"));
 	}
-	
+
 	public String removeFrontCharacters(String prString, int prNumToRemove) {
 		int iCount = 0;
 		int iStringLength = prString.length();
@@ -125,36 +130,43 @@ public class IOProcessor {
 		return new String(iStringArray);
 	}
 
-	public void parseNewString(String prString, UserDetails prUser) {
-		char iContents = GetDataContents(prString);
+	public void parseNewRequest(HttpServletRequest request, HttpServletResponse response) {
+		String newRequest = request.getParameter("r");
 
-		switch (iContents) {
-		case 'i':
-			processInstructionString(removeFrontCharacters(prString, 2), prUser);
-			break;
-		case 'c':
-			processChatString(prString, prUser);
-			break;
-		//case 'Q': // Old question parsing, to be removed
-			//processQuestionString(removeFrontCharacters(prString, 2), prUser);
-			//break;
-		case 'q':
-			processNewQuestion(prString);
-			break;
-		case 'A':
-			processAnswerString(removeFrontCharacters(prString, 2), prUser);
-			break;
-		case 'u':
-			processUserDetails(prString, prUser);
-			break;
-		case 'U':
-			processUserDetailsByString(removeFrontCharacters(prString, 2), prUser);
-			break;
+		try {
+			response.setContentType("text/plain");
+			PrintWriter out = response.getWriter();
+
+			// UserDetails iUser = mUserManager.getUserDetails(userIdString);
+
+			if (newRequest != null) {
+				if (newRequest.equals("login")) {
+					if (userLogin(request)) {
+						response.sendError(HttpServletResponse.SC_ACCEPTED);
+					}
+				}
+
+				if (newRequest.equals("chatMessage"))
+					processChatString(newRequest);
+
+				if (newRequest.equals("newQuestion"))
+					processNewQuestion(request);
+
+				if (newRequest.equals("newAnswer"))
+					processAnswerString(request);
+
+				if (newRequest.equals("newUser"))
+					processUserDetails(request);
+			}
+			// if (!chatString.equals(""))
+			// processUserDetailsByString(removeFrontCharacters(prString, 2));
+		} catch (IOException ex) {
+
 		}
 	}
 
 	// Work out what the data is
-	private char GetDataContents(String prData) {
+	private char getDataContents(String prData) {
 		// String iDataString = new
 		// String(Encoding.ASCII.GetChars(prData)).Replace("\0", "");
 		char[] iDataTypeArray = new char[2];
@@ -197,7 +209,7 @@ public class IOProcessor {
 	}
 
 	// Interprets instructions sent from command line
-	private void processInstructionString(String prString, UserDetails prUser) {
+	private void processInstructionString(String prString) {
 		InstructionParser iParser = new InstructionParser(this);
 
 		String iInstructions;
@@ -247,7 +259,17 @@ public class IOProcessor {
 		}
 	}
 
-	private void processChatString(String prString, UserDetails prUser) {
+	private boolean userLogin(HttpServletRequest request) {
+		String username = request.getParameter("username");
+		String password = request.getParameter("password");
+
+		if (mUserManager.isUsernameAvailable(username))
+			return true;
+
+		return false;
+	}
+
+	private void processChatString(String prString) {
 		String iChatString = prString.replace("\0", "");
 
 		// TODO: Reenable chat messages in JSON
@@ -258,7 +280,7 @@ public class IOProcessor {
 	}
 
 	// New implementation of question input using XML serialisation
-	private void processNewQuestion(String prQuestionArray) {
+	private void processNewQuestion(HttpServletRequest request) {
 		Question iNewQuestion = new Question();// mSerialiserMethods.ConvertStringToQuestion(prQuestionArray);
 
 		// Set the question ID
@@ -280,7 +302,7 @@ public class IOProcessor {
 	}
 
 	// TODO: Add JSON parsing for answers
-	private void processAnswerString(String prString, UserDetails prUser) {
+	private void processAnswerString(HttpServletRequest request) {
 		char[] iAnswerArray = new char[150]; // The max char size for all
 												// answers is currently 150
 		char[] iQuestionIDArray = new char[5]; // allow for up to 99999 ID's
@@ -299,7 +321,7 @@ public class IOProcessor {
 			 * iAnswerArray[iCurrPos] = prString[i]; iCurrPos++; } else {
 			 * iAnswerFound = true; } } } } else { break; } }
 			 */
-			iNewAnswer.username(prUser.username());
+			iNewAnswer.username("TEST");
 			iNewAnswer.answer(new String(iAnswerArray).replace("\0", ""));
 			iNewAnswer.questionID(Integer.parseInt(new String(iQuestionIDArray).replace("\0", "")));
 			iNewAnswer.answerSent(false);
@@ -307,76 +329,65 @@ public class IOProcessor {
 			mAnswerManager.addAnswer(iNewAnswer);
 
 			mMessageLogger.newMessage(
-					prUser.username() + " answered " + iNewAnswer.answer() + " for "
-							+ mQuestionManager.getQuestionStringByID(iNewAnswer.questionID()), MessageLogger.MESSAGE_ANSWER);
+					"TEST" + " answered " + iNewAnswer.answer() + " for " + mQuestionManager.getQuestionStringByID(iNewAnswer.questionID()),
+					MessageLogger.MESSAGE_ANSWER);
 		} else {
 			mMessageLogger.newMessage("Response received after Time", MessageLogger.MESSAGE_SERVER);
 		}
 	}
 
 	// Old String based user String
-	private void processUserDetailsByString(String prString, UserDetails prUser) {
-		int iPos = 0;
-		int iCurrPos = 0;
-		int iSection = 0;
+	/*
+	 * private void processUserDetailsByString(String prString) { int iPos = 0;
+	 * int iCurrPos = 0; int iSection = 0;
+	 * 
+	 * char[] iUsernameArray, iDeviceOSArray, iUserRoleArray;
+	 * 
+	 * iUsernameArray = new char[40]; iDeviceOSArray = new char[15];
+	 * iUserRoleArray = new char[8];
+	 * 
+	 * prUser.userRole(new String(iUserRoleArray).replace("\0", ""));
+	 * prUser.deviceOS(new String(iDeviceOSArray).replace("\0", ""));
+	 * prUser.username(new String(iUsernameArray).replace("\0", ""));
+	 * prUser.currQuestion(new Question()); if
+	 * (!prUser.userRole().equals("Tutor")) {
+	 * mMessageLogger.newMessage(prUser.username() + " joined the server",
+	 * MessageLogger.MESSAGE_STUDENT); } else {
+	 * mMessageLogger.newMessage(prUser.username() + " joined the server",
+	 * MessageLogger.MESSAGE_TUTOR); }
+	 * 
+	 * // mUserManager.AddNewUser(prUser); //
+	 * mQuestionManager.SendQuestionListToTutors();
+	 * 
+	 * respondToConnection(prUser); }
+	 */
 
-		char[] iUsernameArray, iDeviceOSArray, iUserRoleArray;
+	// Creates a new user from a HTTP request
+	private UserDetails processUserDetails(HttpServletRequest request) {
 
-		iUsernameArray = new char[40];
-		iDeviceOSArray = new char[15];
-		iUserRoleArray = new char[8];
+		UserDetails iNewUser = new UserDetails();
 
-		/*
-		 * // Changed to allow for easier addition of information for (int i =
-		 * 0; i < prString.length(); i++) { if (prString[i] != ';') { switch
-		 * (iSection) { case 0: // User Role if (prString[i] != '|') {
-		 * iUserRoleArray[iCurrPos] = prString[i]; iCurrPos++; } else { iCurrPos
-		 * = 0; iSection++; } break; case 1: // Username if (prString[i] != '|')
-		 * { iUsernameArray[iCurrPos] = prString[i]; iCurrPos++; } else {
-		 * iSection++; iCurrPos = 0; } break; case 2: // Device OS if
-		 * (prString[i] != '|') { iDeviceOSArray[iCurrPos] = prString[i];
-		 * iCurrPos++; } else { iSection++; iCurrPos = 0; } break; } } else {
-		 * break; } }
-		 */
-		prUser.userRole(new String(iUserRoleArray).replace("\0", ""));
-		prUser.deviceOS(new String(iDeviceOSArray).replace("\0", ""));
-		prUser.username(new String(iUsernameArray).replace("\0", ""));
-		prUser.currQuestion(new Question());
-		if (!prUser.userRole().equals("Tutor")) {
-			mMessageLogger.newMessage(prUser.username() + " joined the server", MessageLogger.MESSAGE_STUDENT);
+		iNewUser.userRole(request.getParameter("userRole"));
+		iNewUser.deviceOS(request.getParameter("deviceOS"));
+		iNewUser.username(request.getParameter("userName"));
+		// if (!iUserDetailsFromClient.password().equals(""))
+		// iNewUser.password(encryption().decrypt(iUserDetailsFromClient.password()));
+
+		// TODO add encryption
+		iNewUser.password(request.getParameter("userPass"));
+
+		iNewUser.currQuestion(new Question());
+
+		if (!iNewUser.userRole().equals("Tutor")) {
+			mMessageLogger.newMessage(iNewUser.username() + " joined the server", MessageLogger.MESSAGE_STUDENT);
 		} else {
-			mMessageLogger.newMessage(prUser.username() + " joined the server", MessageLogger.MESSAGE_TUTOR);
+			mMessageLogger.newMessage(iNewUser.username() + " joined the server", MessageLogger.MESSAGE_TUTOR);
 		}
 
-		// mUserManager.AddNewUser(prUser);
-		// mQuestionManager.SendQuestionListToTutors();
-
-		respondToConnection(prUser);
+		return iNewUser;
 	}
 
-	// New XML serialisation method for processing user details
-	// TODO: Convert to JSON
-	private void processUserDetails(String prString, UserDetails prUser) {
-		TransferrableUserDetails iUserDetailsFromClient = new TransferrableUserDetails();// mSerialiserMethods.ConvertStringToUserDetails(prString);
-
-		prUser.userRole(iUserDetailsFromClient.userRole());
-		prUser.deviceOS(iUserDetailsFromClient.deviceOS());
-		prUser.username(iUserDetailsFromClient.username());
-		if (!iUserDetailsFromClient.password().equals(""))
-			prUser.password(encryption().decrypt(iUserDetailsFromClient.password()));
-
-		prUser.currQuestion(new Question());
-
-		if (!prUser.userRole().equals("Tutor")) {
-			mMessageLogger.newMessage(prUser.username() + " joined the server", MessageLogger.MESSAGE_STUDENT);
-		} else {
-			mMessageLogger.newMessage(prUser.username() + " joined the server", MessageLogger.MESSAGE_TUTOR);
-		}
-
-		respondToConnection(prUser);
-	}
-
-	private void respondToConnection(UserDetails prUser) {
+	private void respondToConnection(HttpServletResponse response, UserDetails prUser) {
 		// Make sure the user name is not in use.
 		if (mUserManager.isUsernameAvailable(prUser.username())) {
 			// Check if the user is a tutor or student
@@ -388,11 +399,13 @@ public class IOProcessor {
 					mQuestionManager.sendQuestionListToTutors();
 
 					// Send a response to client
-					sendConnectionResponse(prUser.username(), "TUTORCONNECTED");
+					// sendConnectionResponse(prUser.username(),
+					// "TUTORCONNECTED");
 				} else {
 					prUser.connected(false);
 					// Send a response to client
-					sendConnectionResponse(prUser.username(), "INCORRECTPASS");
+					// sendConnectionResponse(prUser.username(),
+					// "INCORRECTPASS");
 				}
 			} else {
 				prUser.connected(true);
@@ -400,18 +413,14 @@ public class IOProcessor {
 				mQuestionManager.sendQuestionListToTutors();
 
 				// Send a response to client
-				sendConnectionResponse(prUser.username(), "STUDENTCONNECTED");
+				// sendConnectionResponse(prUser.username(),
+				// "STUDENTCONNECTED");
 			}
 
 		} else {
 			prUser.connected(false);
 			// Send a response to client
-			sendConnectionResponse(prUser.username(), "USERNAMETAKEN");
+			// sendConnectionResponse(prUser.username(), "USERNAMETAKEN");
 		}
-	}
-
-	// Send connection response to client
-	private void sendConnectionResponse(String userName, String prConnectionMessage) {
-		// TODO Add stuff here
 	}
 }

@@ -7,9 +7,8 @@
 <title>SRS Web Server Manager</title>
 </head>
 <body>
-	<p>Manager for SRS Web Servlet.</p>
+	<p>SRS Web Servlet API tester.</p>
 	<form name="mainForm">
-
 		<select id="command">
 			<option value="numberOfUsers">Get Number of Users</option>
 			<option value="usersList">Users List</option>

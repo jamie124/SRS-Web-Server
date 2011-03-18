@@ -257,6 +257,12 @@ public class UserManager {
 		}
 		return -1;
 	}
+	
+	// Returns the user for the given user ID string
+	public UserDetails getUserDetails(String userIdString){
+		
+		return null;
+	}
 
 	// Gets the tutor object for the provided name
 	public TutorDetails getTutorDetails(String prTutorName) {
@@ -281,7 +287,7 @@ public class UserManager {
 		}
 		return true;
 	}
-
+	
 	public JSONObject convertUsersToJSON() {
 		JSONObject usersJSON = new JSONObject();
 		
