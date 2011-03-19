@@ -2,7 +2,7 @@ package Answers;
 
 import java.util.HashMap;
 
-
+ 
 public class AnswerManager {
 
 	private HashMap<Integer, Answer> mAnswersList = new HashMap<Integer, Answer>();

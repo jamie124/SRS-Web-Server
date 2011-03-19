@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import javax.crypto.SecretKey;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.ws.Response;
 
 import Answers.Answer;
 import Answers.AnswerManager;
@@ -82,8 +83,8 @@ public class IOProcessor {
 		this.mEncryption = mEncryption;
 	}
 
-	public IOProcessor(MessageLogger prMessageLogger, UserManager prUserManager, QuestionManager prQuestionManager, AnswerManager prAnswerManager,
-			ChatManager prChatManager) {
+	public IOProcessor(MessageLogger prMessageLogger, UserManager prUserManager, QuestionManager prQuestionManager,
+			AnswerManager prAnswerManager, ChatManager prChatManager) {
 		messageLogger(prMessageLogger);
 		userManager(prUserManager);
 		questionManager(prQuestionManager);
@@ -140,12 +141,6 @@ public class IOProcessor {
 			// UserDetails iUser = mUserManager.getUserDetails(userIdString);
 
 			if (newRequest != null) {
-				if (newRequest.equals("login")) {
-					if (userLogin(request)) {
-						response.sendError(HttpServletResponse.SC_ACCEPTED);
-					}
-				}
-
 				if (newRequest.equals("chatMessage"))
 					processChatString(newRequest);
 
@@ -156,7 +151,11 @@ public class IOProcessor {
 					processAnswerString(request);
 
 				if (newRequest.equals("newUser"))
-					processUserDetails(request);
+					addNewUser(request);
+
+				if (newRequest.equals("login")) {
+					doLogin(request, response);
+				}
 			}
 			// if (!chatString.equals(""))
 			// processUserDetailsByString(removeFrontCharacters(prString, 2));
@@ -259,16 +258,6 @@ public class IOProcessor {
 		}
 	}
 
-	private boolean userLogin(HttpServletRequest request) {
-		String username = request.getParameter("username");
-		String password = request.getParameter("password");
-
-		if (mUserManager.isUsernameAvailable(username))
-			return true;
-
-		return false;
-	}
-
 	private void processChatString(String prString) {
 		String iChatString = prString.replace("\0", "");
 
@@ -276,7 +265,8 @@ public class IOProcessor {
 		ChatMessage iNewMessageReceived = new ChatMessage();// mSerialiserMethods.ConvertStringToChatMessage(iChatString);
 
 		mMessageLogger.chatMessageQueue().add(iNewMessageReceived);
-		mMessageLogger.newMessage(iNewMessageReceived.from() + ": " + iNewMessageReceived.message(), MessageLogger.MESSAGE_CHAT);
+		mMessageLogger.newMessage(iNewMessageReceived.from() + ": " + iNewMessageReceived.message(),
+				MessageLogger.MESSAGE_CHAT);
 	}
 
 	// New implementation of question input using XML serialisation
@@ -329,41 +319,16 @@ public class IOProcessor {
 			mAnswerManager.addAnswer(iNewAnswer);
 
 			mMessageLogger.newMessage(
-					"TEST" + " answered " + iNewAnswer.answer() + " for " + mQuestionManager.getQuestionStringByID(iNewAnswer.questionID()),
+					"TEST" + " answered " + iNewAnswer.answer() + " for "
+							+ mQuestionManager.getQuestionStringByID(iNewAnswer.questionID()),
 					MessageLogger.MESSAGE_ANSWER);
 		} else {
 			mMessageLogger.newMessage("Response received after Time", MessageLogger.MESSAGE_SERVER);
 		}
 	}
 
-	// Old String based user String
-	/*
-	 * private void processUserDetailsByString(String prString) { int iPos = 0;
-	 * int iCurrPos = 0; int iSection = 0;
-	 * 
-	 * char[] iUsernameArray, iDeviceOSArray, iUserRoleArray;
-	 * 
-	 * iUsernameArray = new char[40]; iDeviceOSArray = new char[15];
-	 * iUserRoleArray = new char[8];
-	 * 
-	 * prUser.userRole(new String(iUserRoleArray).replace("\0", ""));
-	 * prUser.deviceOS(new String(iDeviceOSArray).replace("\0", ""));
-	 * prUser.username(new String(iUsernameArray).replace("\0", ""));
-	 * prUser.currQuestion(new Question()); if
-	 * (!prUser.userRole().equals("Tutor")) {
-	 * mMessageLogger.newMessage(prUser.username() + " joined the server",
-	 * MessageLogger.MESSAGE_STUDENT); } else {
-	 * mMessageLogger.newMessage(prUser.username() + " joined the server",
-	 * MessageLogger.MESSAGE_TUTOR); }
-	 * 
-	 * // mUserManager.AddNewUser(prUser); //
-	 * mQuestionManager.SendQuestionListToTutors();
-	 * 
-	 * respondToConnection(prUser); }
-	 */
-
 	// Creates a new user from a HTTP request
-	private UserDetails processUserDetails(HttpServletRequest request) {
+	private UserDetails addNewUser(HttpServletRequest request) {
 
 		UserDetails iNewUser = new UserDetails();
 
@@ -385,6 +350,33 @@ public class IOProcessor {
 		}
 
 		return iNewUser;
+	}
+
+	// Login the user
+	private void doLogin(HttpServletRequest request, HttpServletResponse response) {
+
+		response.setContentType("text/plain");
+		try {
+			PrintWriter out = response.getWriter();
+
+			String username = request.getParameter("username");
+			String password = request.getParameter("password");
+
+			switch (mUserManager.checkUserLoginDetails(username, password)) {
+			case Constants.LOGIN_FAILED:
+				out.println(HttpServletResponse.SC_FORBIDDEN);
+				break;
+			case Constants.PASSWORD_INCORRECT:
+				out.println(HttpServletResponse.SC_UNAUTHORIZED);
+				break;
+			case Constants.LOGIN_SUCCESSFUL:
+				out.println(HttpServletResponse.SC_ACCEPTED);
+				break;
+			}
+		} catch (IOException ex) {
+
+		}
+
 	}
 
 	private void respondToConnection(HttpServletResponse response, UserDetails prUser) {

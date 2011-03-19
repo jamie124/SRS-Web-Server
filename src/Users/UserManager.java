@@ -5,6 +5,7 @@ import java.util.HashMap;
 import org.json.*;
 
 import Question.Question;
+import Server.Constants;
 import Server.MessageLogger;
 
 public class UserManager {
@@ -27,12 +28,13 @@ public class UserManager {
 		UserDetails testUser = new UserDetails();
 		testUser.userID(1);
 		testUser.username("James");
+		testUser.password("P@ssword1");
 		testUser.userClass("");
 		testUser.deviceOS("iOS");
 		testUser.userRole("Student");
 
 		addNewUser(testUser);
-		
+
 		UserDetails testUser2 = new UserDetails();
 		testUser2.userID(2);
 		testUser2.username("Test");
@@ -257,10 +259,27 @@ public class UserManager {
 		}
 		return -1;
 	}
+
+	// Checks if the user details are valid
+	public int checkUserLoginDetails(String prUserName, String prPassword) {
+		for (UserDetails user : mUsersOnline.values()) {
+			if (user.username().equals(prUserName)) {
+				if (user.password().equals(prPassword)) {
+					// Set the users login status
+					user.connected(true);
+					
+					return Constants.LOGIN_SUCCESSFUL;
+				} else {
+					return Constants.PASSWORD_INCORRECT;
+				}
+			} 
+		}
+		return Constants.LOGIN_FAILED;
+	}
 	
 	// Returns the user for the given user ID string
-	public UserDetails getUserDetails(String userIdString){
-		
+	public UserDetails getUserDetails(String userIdString) {
+
 		return null;
 	}
 
@@ -287,18 +306,18 @@ public class UserManager {
 		}
 		return true;
 	}
-	
+
 	public JSONObject convertUsersToJSON() {
 		JSONObject usersJSON = new JSONObject();
-		
-		for (UserDetails u : mUsersOnline.values()){
+
+		for (UserDetails u : mUsersOnline.values()) {
 			JSONObject user = new JSONObject();
-			
+
 			user.put("userID", u.userID());
 			user.put("userName", u.username());
 			user.put("deviceOS", u.deviceOS());
 			user.put("isConnected", u.connected());
-			
+
 			usersJSON.put(Integer.toString(u.userID()), user);
 		}
 		return usersJSON;
