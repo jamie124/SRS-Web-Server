@@ -8,10 +8,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.ws.Response;
 
+import com.sun.java.swing.plaf.windows.WindowsBorders.DashedBorder;
+
 import Answers.Answer;
 import Answers.AnswerManager;
 import Chat.ChatManager;
 import Chat.ChatMessage;
+import Database.DB;
 import Question.Question;
 import Users.TransferrableUserDetails;
 import Users.UserManager;
@@ -25,62 +28,71 @@ public class IOProcessor {
 	private ChatMessage mChatMessage;
 	private ChatManager mChatManager;
 	private Encryption mEncryption;
+	private DB mDB;
 
 	// DictionarySerialiserMethods mSerialiserMethods;
-	MessageLogger messageLogger() {
+	public MessageLogger messageLogger() {
 		return mMessageLogger;
 	}
 
-	void messageLogger(MessageLogger mMessageLogger) {
+	public void messageLogger(MessageLogger mMessageLogger) {
 		this.mMessageLogger = mMessageLogger;
 	}
 
-	QuestionManager questionManager() {
+	public QuestionManager questionManager() {
 		return mQuestionManager;
 	}
 
-	void questionManager(QuestionManager mQuestionManager) {
+	public void questionManager(QuestionManager mQuestionManager) {
 		this.mQuestionManager = mQuestionManager;
 	}
 
-	UserManager userManager() {
+	public UserManager userManager() {
 		return mUserManager;
 	}
 
-	void userManager(UserManager mUserManager) {
+	public void userManager(UserManager mUserManager) {
 		this.mUserManager = mUserManager;
 	}
 
-	AnswerManager answerManager() {
+	public AnswerManager answerManager() {
 		return mAnswerManager;
 	}
 
-	void answerManager(AnswerManager mAnswerManager) {
+	public void answerManager(AnswerManager mAnswerManager) {
 		this.mAnswerManager = mAnswerManager;
 	}
 
-	ChatMessage chatMessage() {
+	public ChatMessage chatMessage() {
 		return mChatMessage;
 	}
 
-	void chatMessage(ChatMessage mChatMessage) {
+	public void chatMessage(ChatMessage mChatMessage) {
 		this.mChatMessage = mChatMessage;
 	}
 
-	ChatManager chatManager() {
+	public ChatManager chatManager() {
 		return mChatManager;
 	}
 
-	void chatManager(ChatManager mChatManager) {
+	public void chatManager(ChatManager mChatManager) {
 		this.mChatManager = mChatManager;
 	}
 
-	Encryption encryption() {
+	public Encryption encryption() {
 		return mEncryption;
 	}
 
-	void encryption(Encryption mEncryption) {
+	public void encryption(Encryption mEncryption) {
 		this.mEncryption = mEncryption;
+	}
+
+	public DB db() {
+		return mDB;
+	}
+
+	public void db(DB mDB) {
+		this.mDB = mDB;
 	}
 
 	public IOProcessor(MessageLogger prMessageLogger, UserManager prUserManager, QuestionManager prQuestionManager,
@@ -104,6 +116,8 @@ public class IOProcessor {
 		answerManager(new AnswerManager());
 		chatManager(new ChatManager());
 
+		db(new DB());
+		
 		// TODO: This shit is insecure
 		encryption(new Encryption("P@ssword1"));
 	}
@@ -415,4 +429,5 @@ public class IOProcessor {
 			// sendConnectionResponse(prUser.username(), "USERNAMETAKEN");
 		}
 	}
+
 }
