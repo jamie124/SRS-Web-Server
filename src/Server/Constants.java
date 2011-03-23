@@ -2,6 +2,8 @@ package Server;
 
 public class Constants {
 
+	public static final boolean DEBUG = true;
+	
 	public static final int LOGIN_FAILED = -1;
 	public static final int LOGIN_SUCCESSFUL = 0;
 	public static final int USERNAME_INCORRECT = 1;

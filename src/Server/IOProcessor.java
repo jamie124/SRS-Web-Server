@@ -110,13 +110,13 @@ public class IOProcessor {
 	// Initialise without providing classes
 	// I have a feeling this is a bad way of doing this
 	public IOProcessor() {
+		db(new DB());
+		
 		messageLogger(new MessageLogger());
-		userManager(new UserManager(mMessageLogger));
+		userManager(new UserManager(mMessageLogger, mDB));
 		questionManager(new QuestionManager(mUserManager));
 		answerManager(new AnswerManager());
 		chatManager(new ChatManager());
-
-		db(new DB());
 		
 		// TODO: This shit is insecure
 		encryption(new Encryption("P@ssword1"));
@@ -262,7 +262,7 @@ public class IOProcessor {
 				mMessageLogger.newMessage("Connected Users:", MessageLogger.MESSAGE_COMMAND);
 
 				for (int q = 1; q <= mUserManager.usersOnline().size(); q++) {
-					iResult += mUserManager.usersOnline().get(q).username();
+					iResult += mUserManager.usersOnline().get(q).userLogin();
 					mMessageLogger.newMessage(iResult, MessageLogger.MESSAGE_COMMAND);
 					iResult = "";
 				}
@@ -346,23 +346,31 @@ public class IOProcessor {
 
 		UserDetails iNewUser = new UserDetails();
 
+		iNewUser.userLogin(request.getParameter("userLogin"));
+		iNewUser.userFirstName(request.getParameter("userFirstName"));
+		iNewUser.userLastName(request.getParameter("userLastName"));
+		iNewUser.primaryDevice(request.getParameter("primaryDevice"));
+		iNewUser.secondaryDevice(request.getParameter("secondaryDevice"));
+		iNewUser.userClass(request.getParameter("userClass"));
 		iNewUser.userRole(request.getParameter("userRole"));
-		iNewUser.deviceOS(request.getParameter("deviceOS"));
-		iNewUser.username(request.getParameter("userName"));
+		iNewUser.userPassword(request.getParameter("userPassword"));
 		// if (!iUserDetailsFromClient.password().equals(""))
+		
+		mDB.addUser(iNewUser);
 		// iNewUser.password(encryption().decrypt(iUserDetailsFromClient.password()));
 
 		// TODO add encryption
-		iNewUser.password(request.getParameter("userPass"));
+		iNewUser.userPassword(request.getParameter("userPass"));
 
 		iNewUser.currQuestion(new Question());
 
+		/*
 		if (!iNewUser.userRole().equals("Tutor")) {
 			mMessageLogger.newMessage(iNewUser.username() + " joined the server", MessageLogger.MESSAGE_STUDENT);
 		} else {
 			mMessageLogger.newMessage(iNewUser.username() + " joined the server", MessageLogger.MESSAGE_TUTOR);
 		}
-
+		*/
 		return iNewUser;
 	}
 
@@ -380,6 +388,9 @@ public class IOProcessor {
 			case Constants.LOGIN_FAILED:
 				out.println(HttpServletResponse.SC_FORBIDDEN);
 				break;
+			case Constants.USERNAME_INCORRECT:
+				out.println(HttpServletResponse.SC_NOT_FOUND);
+				break;
 			case Constants.PASSWORD_INCORRECT:
 				out.println(HttpServletResponse.SC_UNAUTHORIZED);
 				break;
@@ -395,9 +406,9 @@ public class IOProcessor {
 
 	private void respondToConnection(HttpServletResponse response, UserDetails prUser) {
 		// Make sure the user name is not in use.
-		if (mUserManager.isUsernameAvailable(prUser.username())) {
+		if (mUserManager.isUsernameAvailable(prUser.userLogin())) {
 			// Check if the user is a tutor or student
-			if (mUserManager.isUserATutor(prUser.username())) {
+			if (mUserManager.isUserATutor(prUser.userLogin())) {
 				// Check password
 				if (mUserManager.verifyPassword(prUser)) {
 					prUser.connected(true);

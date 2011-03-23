@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import org.json.*;
 
+import Database.DB;
 import Question.Question;
 import Server.Constants;
 import Server.MessageLogger;
@@ -11,6 +12,8 @@ import Server.MessageLogger;
 public class UserManager {
 
 	private MessageLogger mMessageLogger;
+	private DB db;
+
 	// private XmlHandler mXmlHandler;
 
 	private int mMaxUserKey;
@@ -20,34 +23,22 @@ public class UserManager {
 	// Version of user details intended for transfer to clients
 	private ArrayList<TransferrableUserDetails> mUserDetailsToTransfer;
 
-	public UserManager(MessageLogger prMessageLogger) {
-		mUsersOnline = new HashMap<Integer, UserDetails>();
-		mMessageLogger = prMessageLogger;
+	public UserManager(MessageLogger prMessageLogger, DB prDB) {
+		this.mUsersOnline = new HashMap<Integer, UserDetails>();
+		this.mMessageLogger = prMessageLogger;
 
-		// Demo user to help with server testing
-		UserDetails testUser = new UserDetails();
-		testUser.userID(1);
-		testUser.username("James");
-		testUser.password("P@ssword1");
-		testUser.userClass("");
-		testUser.deviceOS("iOS");
-		testUser.userRole("Student");
-
-		addNewUser(testUser);
-
-		UserDetails testUser2 = new UserDetails();
-		testUser2.userID(2);
-		testUser2.username("Test");
-		testUser2.userClass("");
-		testUser2.deviceOS("Win7");
-		testUser2.userRole("Student");
-
-		addNewUser(testUser2);
-		// mXmlHandler = new XmlHandler();
+		this.db = prDB;
+		/*
+		 * UserDetails testUser2 = new UserDetails(); testUser2.userID(2);
+		 * testUser2.username("Test"); testUser2.userClass("");
+		 * testUser2.deviceOS("Win7"); testUser2.userRole("Student");
+		 * 
+		 * addNewUser(testUser2);
+		 */
 	}
 
 	public int maxUserKey() {
-		return mMaxUserKey;
+		return this.mMaxUserKey;
 	}
 
 	public void maxUserKey(int mMaxUserKey) {
@@ -139,8 +130,8 @@ public class UserManager {
 		// Loop through dictionary
 		for (UserDetails userDetails : mUsersOnline.values()) {
 			iTempDetails = new TransferrableUserDetails();
-			iTempDetails.username(userDetails.username());
-			iTempDetails.deviceOS(userDetails.deviceOS());
+			iTempDetails.username(userDetails.userLogin());
+			iTempDetails.deviceOS(userDetails.primaryDevice());
 			iTempDetails.userRole(userDetails.userRole());
 
 			mUserDetailsToTransfer.add(iTempDetails);
@@ -254,7 +245,7 @@ public class UserManager {
 
 	private int getUserIDUsingName(String prUserName) {
 		for (UserDetails user : mUsersOnline.values()) {
-			if (user.username().equals(prUserName))
+			if (user.userLogin().equals(prUserName))
 				return user.userID();
 		}
 		return -1;
@@ -262,21 +253,21 @@ public class UserManager {
 
 	// Checks if the user details are valid
 	public int checkUserLoginDetails(String prUserName, String prPassword) {
-		for (UserDetails user : mUsersOnline.values()) {
-			if (user.username().equals(prUserName)) {
-				if (user.password().equals(prPassword)) {
-					// Set the users login status
-					user.connected(true);
-					
-					return Constants.LOGIN_SUCCESSFUL;
-				} else {
-					return Constants.PASSWORD_INCORRECT;
-				}
-			} 
+
+		UserDetails userDetails = db.getUser(prUserName);
+
+		if (userDetails != null) {
+			if (userDetails.password().equals(prPassword)) {
+				userDetails.connected(true);
+				return Constants.LOGIN_SUCCESSFUL;
+			} else {
+				return Constants.PASSWORD_INCORRECT;
+			}
+		} else {
+			return Constants.USERNAME_INCORRECT;
 		}
-		return Constants.LOGIN_FAILED;
 	}
-	
+
 	// Returns the user for the given user ID string
 	public UserDetails getUserDetails(String userIdString) {
 
@@ -301,10 +292,17 @@ public class UserManager {
 	// Check if the user name is available
 	public boolean isUsernameAvailable(String prUsername) {
 		for (UserDetails user : mUsersOnline.values()) {
-			if (user.username().equals(prUsername))
+			if (user.userLogin().equals(prUsername))
 				return false;
 		}
 		return true;
+	}
+
+	// Demo user to help with server testing
+	public void addDemoUser() {
+
+		// addNewUser(testUser);
+
 	}
 
 	public JSONObject convertUsersToJSON() {
@@ -314,8 +312,12 @@ public class UserManager {
 			JSONObject user = new JSONObject();
 
 			user.put("userID", u.userID());
-			user.put("userName", u.username());
-			user.put("deviceOS", u.deviceOS());
+			user.put("userName", u.userLogin());
+			user.put("userFirstName", u.userFirstName());
+			user.put("userLastName", u.userLastName());
+			user.put("primaryDevice", u.primaryDevice());
+			user.put("secondaryDevice", u.secondaryDevice());
+			user.put("primaryDevice", u.primaryDevice());
 			user.put("isConnected", u.connected());
 
 			usersJSON.put(Integer.toString(u.userID()), user);
