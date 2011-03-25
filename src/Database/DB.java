@@ -86,51 +86,54 @@ public class DB {
 	public void addUser(UserDetails user) {
 
 		String sqlStmt = "INSERT INTO users (user_login, user_first_name, user_last_name, user_class, user_primary_device, user_secondary_device, user_role, user_password) "
-				+ "VALUES('"
-				+ user.userLogin()
-				+ "','"
-				+ user.userFirstName()
-				+ "','"
-				+ user.userLastName()
-				+ "','"
-				+ user.userClass()
-				+ "','"
-				+ user.primaryDevice()
-				+ "','"
-				+ user.secondaryDevice()
-				+ "','"
-				+ user.userRole() + "','" + user.password() + "')";
+				+ "VALUES(?,?,?,?,?,?,?,?)";
 
-		doUpdateStatement(sqlStmt);
+		try {
+			PreparedStatement ps = conn.prepareStatement(sqlStmt);
+
+			ps.setString(1, user.userLogin());
+			ps.setString(2, user.userFirstName());
+			ps.setString(3, user.userLastName());
+			ps.setString(4, user.userClass());
+			ps.setString(5, user.primaryDevice());
+			ps.setString(6, user.secondaryDevice());
+			ps.setString(7, user.userRole());
+			ps.setString(8, user.password());
+
+			ps.execute();
+		} catch (SQLException ex) {
+		}
 
 		if (Constants.DEBUG)
 			System.out.println("Added user: " + user.userLogin());
 	}
 
+	public void setUserLoginStatus(String username, int loginStatusFlag){
+		//String sqlStmt = "UPDATE users SET  "
+	}
+	
 	public UserDetails getUser(String username) {
-		String sqlStmt = "SELECT * FROM users WHERE user_login='" + username + "'";
-
-		ResultSet results = null;
-		Statement st = doExecuteStatement(sqlStmt);
 		UserDetails user = null;
+		try {
+			String sqlStmt = "SELECT * FROM users WHERE user_login= ?";
+			PreparedStatement ps = conn.prepareStatement(sqlStmt);
 
-		if (st != null) {
-			try {
-				results = st.getResultSet();
+			ps.setString(1, username);
 
-				while (results.next()) {
-					user = new UserDetails(results.getString("user_id"), results.getString("user_login"),
-							results.getString("user_first_name"), results.getString("user_last_name"),
-							results.getString("user_primary_device"), results.getString("user_secondary_device"),
-							results.getString("user_role"), results.getString("user_class"),
-							results.getString("user_password"));
-				}
+			ResultSet results = ps.executeQuery();
 
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			while (results.next()) {
+				user = new UserDetails(results.getString("user_id"), results.getString("user_login"),
+						results.getString("user_first_name"), results.getString("user_last_name"),
+						results.getString("user_primary_device"), results.getString("user_secondary_device"),
+						results.getString("user_role"), results.getString("user_class"),
+						results.getString("user_password"));
 			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+
 		if (Constants.DEBUG) {
 			if (user != null)
 				System.out.println("Got user: " + user.userLogin());
