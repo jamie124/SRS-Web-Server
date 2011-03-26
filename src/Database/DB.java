@@ -3,7 +3,7 @@ package Database;
 import java.sql.*;
 
 import Server.Constants;
-import Users.UserDetails;
+import Users.User;
 
 public class DB {
 	Connection conn = null;
@@ -83,22 +83,23 @@ public class DB {
 		}
 	}
 
-	public void addUser(UserDetails user) {
+	public void addUser(User user) {
 
 		String sqlStmt = "INSERT INTO users (user_login, user_first_name, user_last_name, user_class, user_primary_device, user_secondary_device, user_role, user_password) "
 				+ "VALUES(?,?,?,?,?,?,?,?)";
 
 		try {
 			PreparedStatement ps = conn.prepareStatement(sqlStmt);
-
-			ps.setString(1, user.userLogin());
-			ps.setString(2, user.userFirstName());
-			ps.setString(3, user.userLastName());
-			ps.setString(4, user.userClass());
-			ps.setString(5, user.primaryDevice());
-			ps.setString(6, user.secondaryDevice());
-			ps.setString(7, user.userRole());
-			ps.setString(8, user.password());
+			int index = 1;
+			
+			ps.setString(index++, user.userLogin());
+			ps.setString(index++, user.userFirstName());
+			ps.setString(index++, user.userLastName());
+			ps.setString(index++, user.userClass());
+			ps.setString(index++, user.primaryDevice());
+			ps.setString(index++, user.secondaryDevice());
+			ps.setString(index++, user.userRole());
+			ps.setString(index++, user.password());
 
 			ps.execute();
 		} catch (SQLException ex) {
@@ -109,29 +110,45 @@ public class DB {
 	}
 
 	public void setUserLoginStatus(String username, int loginStatusFlag){
-		//String sqlStmt = "UPDATE users SET  "
+		String sqlStmt = "UPDATE users SET last_update=NOW(), login_status=? WHERE user_login=?";
+		
+		try {
+			PreparedStatement ps = conn.prepareStatement(sqlStmt);
+			
+			int index = 1;
+			
+			ps.setInt(index++, loginStatusFlag);
+			ps.setString(index, username);
+			
+			ps.execute();
+		} catch (SQLException ex){
+			if (Constants.DEBUG)
+				System.out.println(ex.getMessage());
+		}
 	}
 	
-	public UserDetails getUser(String username) {
-		UserDetails user = null;
+	public User getUser(String username) {
+		User user = null;
 		try {
 			String sqlStmt = "SELECT * FROM users WHERE user_login= ?";
 			PreparedStatement ps = conn.prepareStatement(sqlStmt);
 
-			ps.setString(1, username);
+			int index = 1;
+			
+			ps.setString(index, username);
 
 			ResultSet results = ps.executeQuery();
 
 			while (results.next()) {
-				user = new UserDetails(results.getString("user_id"), results.getString("user_login"),
+				user = new User(results.getString("user_id"), results.getString("user_login"),
 						results.getString("user_first_name"), results.getString("user_last_name"),
 						results.getString("user_primary_device"), results.getString("user_secondary_device"),
 						results.getString("user_role"), results.getString("user_class"),
 						results.getString("user_password"));
 			}
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (SQLException ex) {
+			if (Constants.DEBUG)
+				System.out.println(ex.getMessage());
 		}
 
 		if (Constants.DEBUG) {

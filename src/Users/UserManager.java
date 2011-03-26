@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import org.json.*;
 
+import com.google.gson.Gson;
+
 import Database.DB;
 import Question.Question;
 import Server.Constants;
@@ -18,13 +20,13 @@ public class UserManager {
 
 	private int mMaxUserKey;
 
-	private HashMap<Integer, UserDetails> mUsersOnline;
+	private HashMap<Integer, User> mUsersOnline;
 	private HashMap<Integer, TutorDetails> mTutors;
 	// Version of user details intended for transfer to clients
 	private ArrayList<TransferrableUserDetails> mUserDetailsToTransfer;
 
 	public UserManager(MessageLogger prMessageLogger, DB prDB) {
-		this.mUsersOnline = new HashMap<Integer, UserDetails>();
+		this.mUsersOnline = new HashMap<Integer, User>();
 		this.mMessageLogger = prMessageLogger;
 
 		this.db = prDB;
@@ -45,11 +47,11 @@ public class UserManager {
 		this.mMaxUserKey = mMaxUserKey;
 	}
 
-	public HashMap<Integer, UserDetails> usersOnline() {
+	public HashMap<Integer, User> usersOnline() {
 		return mUsersOnline;
 	}
 
-	public void usersOnline(HashMap<Integer, UserDetails> mUsersOnline) {
+	public void usersOnline(HashMap<Integer, User> mUsersOnline) {
 		this.mUsersOnline = mUsersOnline;
 	}
 
@@ -77,7 +79,7 @@ public class UserManager {
 		if (mUsersOnline.size() > 0) {
 			while (i <= mMaxUserKey) {
 				if (mUsersOnline.containsKey(i)) {
-					mUsersOnline.get(i).currQuestion(prQuestion);
+					// mUsersOnline.get(i).currQuestion(prQuestion);
 
 					/*
 					 * TODO: May not be needed
@@ -110,65 +112,10 @@ public class UserManager {
 		return key;
 	}
 
-	// Get the largest key in the tutor hashmap
-	private int getLargestTutorKey() {
-		int key = 0;
-
-		for (int keyString : mTutors.keySet()) {
-			if (keyString > key)
-				key = keyString;
-		}
-
-		return key;
-	}
-
-	// Copy the important details from userDetails to transferrableUserDetails
-	private void processUserDetails() {
-		mUserDetailsToTransfer = new ArrayList<TransferrableUserDetails>();
-		TransferrableUserDetails iTempDetails = new TransferrableUserDetails();
-
-		// Loop through dictionary
-		for (UserDetails userDetails : mUsersOnline.values()) {
-			iTempDetails = new TransferrableUserDetails();
-			iTempDetails.username(userDetails.userLogin());
-			iTempDetails.deviceOS(userDetails.primaryDevice());
-			iTempDetails.userRole(userDetails.userRole());
-
-			mUserDetailsToTransfer.add(iTempDetails);
-		}
-	}
-
-	// Send the current user details to tutors
-	public void sendUserListToTutors() {
-		processUserDetails();
-		int i = 0;
-		int iNumUsers = 0;
-
-		iNumUsers = mMaxUserKey;
-
-		// Hack to fix the bug that stops the server from sending userlist
-		// update
-		// when there there's only 1 user online.
-		if (mUsersOnline.size() == 1) {
-			i = getLargestUserKey();
-		}
-
-		while (i <= iNumUsers) {
-			// Only send the list to a tutor
-			if (mUsersOnline.containsKey(i)) {
-				if (mUsersOnline.get(i).userRole().equals("Tutor")) {
-					mUsersOnline.get(i).userListRequested(true);
-				}
-			}
-			i++;
-		}
-
-	}
-
 	// Check if the tutors list contains the provided name
 	public boolean isUserATutor(String prUsername) {
 		if (mTutors != null) {
-			for (UserDetails userDetails : mUsersOnline.values()) {
+			for (User userDetails : mUsersOnline.values()) {
 				if (userDetails.userRole().equals("Tutor"))
 					return true;
 			}
@@ -177,8 +124,8 @@ public class UserManager {
 	}
 
 	// Check the password against a user
-	public boolean verifyPassword(UserDetails prUser) {
-		for (UserDetails userDetails : mUsersOnline.values()) {
+	public boolean verifyPassword(User prUser) {
+		for (User userDetails : mUsersOnline.values()) {
 			if (userDetails.password().equals(prUser.password()))
 				return true;
 		}
@@ -190,7 +137,7 @@ public class UserManager {
 		return usersOnline().size();
 	}
 
-	public void addNewUser(UserDetails prUser) {
+	public void addNewUser(User prUser) {
 		int iNewID = getLargestUserKey() + 1;
 
 		if (mUsersOnline.size() == 0)
@@ -201,7 +148,7 @@ public class UserManager {
 		// Update max user key
 		maxUserKey(iNewID);
 
-		sendUserListToTutors();
+		// sendUserListToTutors();
 	}
 
 	// Add a new tutor to the list
@@ -244,7 +191,7 @@ public class UserManager {
 	}
 
 	private int getUserIDUsingName(String prUserName) {
-		for (UserDetails user : mUsersOnline.values()) {
+		for (User user : mUsersOnline.values()) {
 			if (user.userLogin().equals(prUserName))
 				return user.userID();
 		}
@@ -254,11 +201,12 @@ public class UserManager {
 	// Checks if the user details are valid
 	public int checkUserLoginDetails(String prUserName, String prPassword) {
 
-		UserDetails userDetails = db.getUser(prUserName);
+		User userDetails = db.getUser(prUserName);
 
 		if (userDetails != null) {
 			if (userDetails.password().equals(prPassword)) {
-				userDetails.connected(true);
+				db.setUserLoginStatus(prUserName, Constants.USER_LOGGED_IN);
+
 				return Constants.LOGIN_SUCCESSFUL;
 			} else {
 				return Constants.PASSWORD_INCORRECT;
@@ -268,10 +216,44 @@ public class UserManager {
 		}
 	}
 
-	// Returns the user for the given user ID string
-	public UserDetails getUserDetails(String userIdString) {
+	// Log out the user
+	public int logoutUser(String prUserName, String prPassword) {
 
-		return null;
+		// Require a valid password to prevent other students from remotely
+		// logging out each other.
+		User userDetails = db.getUser(prUserName);
+
+		if (userDetails != null) {
+			if (userDetails.password().equals(prPassword)) {
+				db.setUserLoginStatus(prUserName, Constants.USER_LOGGED_OUT);
+
+				return Constants.LOGOUT_SUCCESSFUL;
+			} else {
+				return Constants.PASSWORD_INCORRECT;
+			}
+		} else {
+			return Constants.USERNAME_INCORRECT;
+		}
+	}
+
+	// Returns the user details as a JSON string
+	public String getUserDetails(String username, String password) {
+		// Require a valid password to prevent other students from remotely
+		// logging out each other.
+		User user = db.getUser(username);
+
+		if (user != null) {
+			if (user.password().equals(password)) {
+				Gson gson = new Gson();
+				String jsonString = gson.toJson(user);
+
+				if (Constants.DEBUG)
+					System.out.println(jsonString);
+				return jsonString;
+			}
+		}
+
+		return "";
 	}
 
 	// Gets the tutor object for the provided name
@@ -291,7 +273,7 @@ public class UserManager {
 
 	// Check if the user name is available
 	public boolean isUsernameAvailable(String prUsername) {
-		for (UserDetails user : mUsersOnline.values()) {
+		for (User user : mUsersOnline.values()) {
 			if (user.userLogin().equals(prUsername))
 				return false;
 		}
@@ -308,7 +290,7 @@ public class UserManager {
 	public JSONObject convertUsersToJSON() {
 		JSONObject usersJSON = new JSONObject();
 
-		for (UserDetails u : mUsersOnline.values()) {
+		for (User u : mUsersOnline.values()) {
 			JSONObject user = new JSONObject();
 
 			user.put("userID", u.userID());
@@ -318,7 +300,7 @@ public class UserManager {
 			user.put("primaryDevice", u.primaryDevice());
 			user.put("secondaryDevice", u.secondaryDevice());
 			user.put("primaryDevice", u.primaryDevice());
-			user.put("isConnected", u.connected());
+			// user.put("isConnected", u.connected());
 
 			usersJSON.put(Integer.toString(u.userID()), user);
 		}

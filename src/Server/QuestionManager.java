@@ -27,8 +27,8 @@ public class QuestionManager {
 			while (i <= mUserManager.maxUserKey()) {
 				// Only send the list to a tutor
 				if (mUserManager.usersOnline().containsKey(i)) {
-					if (mUserManager.usersOnline().get(i).userRole().equals("Tutor"))
-						mUserManager.usersOnline().get(i).questionListRequested(true);
+					//if (mUserManager.usersOnline().get(i).userRole().equals("Tutor"))
+						//mUserManager.usersOnline().get(i).questionListRequested(true);
 				}
 				i++;
 			}

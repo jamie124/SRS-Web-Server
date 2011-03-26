@@ -2,39 +2,40 @@ package Users;
 
 import Question.Question;
 
-public class UserDetails {
+public class User {
 
-	private int mID;
-	private String mUsername;
-	private String mUserFirstName;
-	private String mUserLastName;
-	private String mPassword;
-	private String mPrimaryDevice;
-	private String mSecondaryDevice;
-	private String mUserRole;
-	private String mUserClass;
+	private int id;
+	private String userName;
+	private String userFirstName;
+	private String userLastName;
+	private String userPassword;
+	private String primaryDevice;
+	private String secondaryDevice;
+	private String userRole;
+	private String userClass;
 
 	// Question
-	private Question mCurrQuestion;
-	private String mCurrQuestionString; // Question in String format
-	private String mChatMessage;
+	//private Question mCurrQuestion;
+	//private String mCurrQuestionString; // Question in String format
+	//private String mChatMessage;
 
-	private boolean mUserListRequested;
-	private boolean mQuestionListRequested;
-	private boolean mConnected;
+	//private boolean mUserListRequested;
+	//private boolean mQuestionListRequested;
+	//private boolean mConnected;
 
-	public UserDetails() {
-		mID = 0;
-		mUsername = "";
-		mUserFirstName = "";
-		mUserLastName = "";
-		mPassword = "";
-		mPrimaryDevice = "";
-		mSecondaryDevice = "";
-		mUserRole = "";
-		mUserClass = "";
+	public User() {
+		id = 0;
+		userName = "";
+		userFirstName = "";
+		userLastName = "";
+		userPassword = "";
+		primaryDevice = "";
+		secondaryDevice = "";
+		userRole = "";
+		userClass = "";
 
 		// Question
+		/*
 		mCurrQuestion = null;
 		mCurrQuestionString = ""; // Question in String format
 		mChatMessage = "";
@@ -42,21 +43,23 @@ public class UserDetails {
 		mUserListRequested = false;
 		mQuestionListRequested = false;
 		mConnected = false;
+		*/
 	}
 
-	public UserDetails(String prUserID, String prUsername, String prUserFirstName, String prUserLastName, String prPrimaryDevice,
+	public User(String prUserID, String prUsername, String prUserFirstName, String prUserLastName, String prPrimaryDevice,
 			String prSecondaryDevice, String prUserRole, String prUserClass, String prPassword) {
-		mID = Integer.parseInt(prUserID);
-		mUsername = prUsername;
-		mUserFirstName = prUserFirstName;
-		mUserLastName = prUserLastName;
-		mPassword = prPassword;
-		mPrimaryDevice = prPrimaryDevice;
-		mSecondaryDevice = prSecondaryDevice;
-		mUserRole = prUserRole;
-		mUserClass = prUserClass;
+		id = Integer.parseInt(prUserID);
+		userName = prUsername;
+		userFirstName = prUserFirstName;
+		userLastName = prUserLastName;
+		userPassword = prPassword;
+		primaryDevice = prPrimaryDevice;
+		secondaryDevice = prSecondaryDevice;
+		userRole = prUserRole;
+		userClass = prUserClass;
 
 		// Question
+		/*
 		mCurrQuestion = null;
 		mCurrQuestionString = ""; // Question in String format
 		mChatMessage = "";
@@ -64,56 +67,58 @@ public class UserDetails {
 		mUserListRequested = false;
 		mQuestionListRequested = false;
 		mConnected = false;
+		*/
 	}
 
 	public String userLogin() {
-		return mUsername;
+		return userName;
 	}
 
 	public void userLogin(String mUsername) {
-		this.mUsername = mUsername;
+		this.userName = mUsername;
 	}
 
 	public String password() {
-		return mPassword;
+		return userPassword;
 	}
-
+	
 	public void userPassword(String mPassword) {
-		this.mPassword = mPassword;
+		this.userPassword = mPassword;
 	}
 
 	public String primaryDevice() {
-		return mPrimaryDevice;
+		return primaryDevice;
 	}
 
 	public void primaryDevice(String mPrimaryDevice) {
-		this.mPrimaryDevice = mPrimaryDevice;
+		this.primaryDevice = mPrimaryDevice;
 	}
 
 	public String secondaryDevice() {
-		return mSecondaryDevice;
+		return secondaryDevice;
 	}
 
 	public void secondaryDevice(String mSecondaryDevice) {
-		this.mSecondaryDevice = mSecondaryDevice;
+		this.secondaryDevice = mSecondaryDevice;
 	}
 
 	public String userRole() {
-		return mUserRole;
+		return userRole;
 	}
 
 	public void userRole(String mUserRole) {
-		this.mUserRole = mUserRole;
+		this.userRole = mUserRole;
 	}
 
 	public String userClass() {
-		return mUserClass;
+		return userClass;
 	}
 
 	public void userClass(String mClass) {
-		this.mUserClass = mClass;
+		this.userClass = mClass;
 	}
 
+	/*
 	public String currQuestionString() {
 		return mCurrQuestionString;
 	}
@@ -153,15 +158,17 @@ public class UserDetails {
 	public void currQuestion(Question mCurrQuestion) {
 		this.mCurrQuestion = mCurrQuestion;
 	}
-
+	*/
+	
 	public int userID() {
-		return mID;
+		return id;
 	}
 
 	public void userID(int mID) {
-		this.mID = mID;
+		this.id = mID;
 	}
 
+	/*
 	public boolean connected() {
 		return mConnected;
 	}
@@ -169,21 +176,22 @@ public class UserDetails {
 	public void connected(boolean mConnected) {
 		this.mConnected = mConnected;
 	}
+	*/
 
 	public String userFirstName() {
-		return mUserFirstName;
+		return userFirstName;
 	}
 
 	public void userFirstName(String mUserFirstName) {
-		this.mUserFirstName = mUserFirstName;
+		this.userFirstName = mUserFirstName;
 	}
 
 	public String userLastName() {
-		return mUserLastName;
+		return userLastName;
 	}
 
 	public void userLastName(String mUserLastName) {
-		this.mUserLastName = mUserLastName;
+		this.userLastName = mUserLastName;
 	}
 
 }

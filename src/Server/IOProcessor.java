@@ -18,7 +18,7 @@ import Database.DB;
 import Question.Question;
 import Users.TransferrableUserDetails;
 import Users.UserManager;
-import Users.UserDetails;
+import Users.User;
 
 public class IOProcessor {
 	private MessageLogger mMessageLogger;
@@ -169,6 +169,14 @@ public class IOProcessor {
 
 				if (newRequest.equals("login")) {
 					doLogin(request, response);
+				}
+				
+				if (newRequest.equals("logout")) {
+					doLogout(request, response);
+				}
+				
+				if (newRequest.equals("getUser")) {
+					getUserData(request, response);
 				}
 			}
 			// if (!chatString.equals(""))
@@ -342,9 +350,9 @@ public class IOProcessor {
 	}
 
 	// Creates a new user from a HTTP request
-	private UserDetails addNewUser(HttpServletRequest request) {
+	private User addNewUser(HttpServletRequest request) {
 
-		UserDetails iNewUser = new UserDetails();
+		User iNewUser = new User();
 
 		iNewUser.userLogin(request.getParameter("userLogin"));
 		iNewUser.userFirstName(request.getParameter("userFirstName"));
@@ -360,9 +368,8 @@ public class IOProcessor {
 		// iNewUser.password(encryption().decrypt(iUserDetailsFromClient.password()));
 
 		// TODO add encryption
-		iNewUser.userPassword(request.getParameter("userPass"));
 
-		iNewUser.currQuestion(new Question());
+		//iNewUser.currQuestion(new Question());
 
 		/*
 		if (!iNewUser.userRole().equals("Tutor")) {
@@ -396,6 +403,8 @@ public class IOProcessor {
 				break;
 			case Constants.LOGIN_SUCCESSFUL:
 				out.println(HttpServletResponse.SC_ACCEPTED);
+				if (Constants.DEBUG)
+					System.out.println(username + " has logged in.");
 				break;
 			}
 		} catch (IOException ex) {
@@ -404,14 +413,65 @@ public class IOProcessor {
 
 	}
 
-	private void respondToConnection(HttpServletResponse response, UserDetails prUser) {
+	// Logout the user
+	private void doLogout(HttpServletRequest request, HttpServletResponse response) {
+
+		response.setContentType("text/plain");
+		try {
+			PrintWriter out = response.getWriter();
+
+			String username = request.getParameter("username");
+			String password = request.getParameter("password");
+
+			switch (mUserManager.logoutUser(username, password)) {
+			case Constants.LOGIN_FAILED:
+				out.println(HttpServletResponse.SC_FORBIDDEN);
+				break;
+			case Constants.USERNAME_INCORRECT:
+				out.println(HttpServletResponse.SC_NOT_FOUND);
+				break;
+			case Constants.PASSWORD_INCORRECT:
+				out.println(HttpServletResponse.SC_UNAUTHORIZED);
+				break;
+			case Constants.LOGOUT_SUCCESSFUL:
+				out.println(HttpServletResponse.SC_ACCEPTED);
+				if (Constants.DEBUG)
+					System.out.println(username + " has logged out.");
+				break;
+			}
+		} catch (IOException ex) {
+
+		}
+
+	}
+
+	// Sends a JSON message containing data about the user
+	private void getUserData(HttpServletRequest request, HttpServletResponse response) {
+
+		response.setContentType("text/plain");
+		try {
+			PrintWriter out = response.getWriter();
+
+			String username = request.getParameter("username");
+			String password = request.getParameter("password");
+
+			String jsonString = mUserManager.getUserDetails(username, password);
+			
+			out.println(jsonString);
+		} catch (IOException ex) {
+
+		}
+
+	}
+	
+	/*
+	private void respondToConnection(HttpServletResponse response, User prUser) {
 		// Make sure the user name is not in use.
 		if (mUserManager.isUsernameAvailable(prUser.userLogin())) {
 			// Check if the user is a tutor or student
 			if (mUserManager.isUserATutor(prUser.userLogin())) {
 				// Check password
 				if (mUserManager.verifyPassword(prUser)) {
-					prUser.connected(true);
 					mUserManager.addNewUser(prUser);
 					mQuestionManager.sendQuestionListToTutors();
 
@@ -419,13 +479,11 @@ public class IOProcessor {
 					// sendConnectionResponse(prUser.username(),
 					// "TUTORCONNECTED");
 				} else {
-					prUser.connected(false);
 					// Send a response to client
 					// sendConnectionResponse(prUser.username(),
 					// "INCORRECTPASS");
 				}
 			} else {
-				prUser.connected(true);
 				mUserManager.addNewUser(prUser);
 				mQuestionManager.sendQuestionListToTutors();
 
@@ -435,10 +493,10 @@ public class IOProcessor {
 			}
 
 		} else {
-			prUser.connected(false);
 			// Send a response to client
 			// sendConnectionResponse(prUser.username(), "USERNAMETAKEN");
 		}
 	}
+	*/
 
 }
