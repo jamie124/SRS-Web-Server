@@ -2,43 +2,36 @@ package Server;
 
 import java.util.HashMap;
 
+import com.google.gson.Gson;
 import com.sun.xml.internal.messaging.saaj.packaging.mime.util.QEncoderStream;
 
+import Database.DB;
 import Question.Question;
+import Users.User;
 import Users.UserManager;
 
 public class QuestionManager {
-	UserManager mUserManager;
+	private UserManager mUserManager;
+	private DB db;
 
 	private HashMap<Integer, Question> mQuestionList;
 
 	private int mLastQuestionAddedToList;
 
-	public QuestionManager(UserManager prUserManager) {
+	public QuestionManager(UserManager prUserManager, DB prDB) {
 		mQuestionList = new HashMap<Integer, Question>();
 		mLastQuestionAddedToList = 0;
 		mUserManager = prUserManager;
+		db = prDB;
 	}
 
-	// Send question data to tutors
-	public void sendQuestionListToTutors() {
-		int i = 0;
-		if (mUserManager.usersOnline().size() > 0) {
-			while (i <= mUserManager.maxUserKey()) {
-				// Only send the list to a tutor
-				if (mUserManager.usersOnline().containsKey(i)) {
-					//if (mUserManager.usersOnline().get(i).userRole().equals("Tutor"))
-						//mUserManager.usersOnline().get(i).questionListRequested(true);
-				}
-				i++;
-			}
-		}
-	}
-
-	// Insert the question number into the String
-	public String insertQuestionNumber(String prQuestionString, int prQuestionNum) {
-		return Integer.toString(prQuestionNum) + "|" + prQuestionString;
-	}
+	/*
+	 * public boolean assignQuestionToStudent(String prUsername, String
+	 * prQuestionName){
+	 * 
+	 * 
+	 * return false; }
+	 */
 
 	public boolean addNewQuestion(Question prQuestion) {
 		if (!questionList().containsKey(prQuestion.questionID()))
@@ -46,7 +39,6 @@ public class QuestionManager {
 		else
 			return false;
 
-		sendQuestionListToTutors();
 		return true;
 
 	}
@@ -91,31 +83,22 @@ public class QuestionManager {
 			return false;
 	}
 
-	public String getLastQuestionAdded() {
-		int i = mLastQuestionAddedToList;
-
-		String iQuestionType = "";
-		String iQuestionCode = "";
-
-		if (questionList().containsKey(i)) {
-			iQuestionCode = questionList().get(i).questionType();
-
-			if (iQuestionCode.equals("MC")) {
-				iQuestionType = "Multi-Choice";
-			} else if (iQuestionCode.equals("SA")) {
-				iQuestionType = "Short Answer";
-			} else if (iQuestionCode.equals("TF")) {
-				iQuestionType = "True/False";
-			} else if (iQuestionCode.equals("MA")) {
-				iQuestionType = "Matching";
-			}
-
-			mLastQuestionAddedToList++;
-			return questionList().get(i).questionString() + " - " + iQuestionType;
-		}
-		mLastQuestionAddedToList++;
-		return "";
-	}
+	/*
+	 * public String getLastQuestionAdded() { int i = mLastQuestionAddedToList;
+	 * 
+	 * String iQuestionType = ""; String iQuestionCode = "";
+	 * 
+	 * if (questionList().containsKey(i)) { iQuestionCode =
+	 * questionList().get(i).questionType();
+	 * 
+	 * if (iQuestionCode.equals("MC")) { iQuestionType = "Multi-Choice"; } else
+	 * if (iQuestionCode.equals("SA")) { iQuestionType = "Short Answer"; } else
+	 * if (iQuestionCode.equals("TF")) { iQuestionType = "True/False"; } else if
+	 * (iQuestionCode.equals("MA")) { iQuestionType = "Matching"; }
+	 * 
+	 * mLastQuestionAddedToList++; return questionList().get(i).questionString()
+	 * + " - " + iQuestionType; } mLastQuestionAddedToList++; return ""; }
+	 */
 
 	// Check if a new question is available
 	public boolean isNewQuestionAvailable() {
@@ -131,46 +114,31 @@ public class QuestionManager {
 		return iQuestion;
 	}
 
-	// Returns the question id for provided question name
-	public int getQuestionIDByString(String prQuestionString) {
-		for (Question question : mQuestionList.values()) {
-			if (question.questionString().equals(prQuestionString)) {
-				return question.questionID();
-			}
-		}
-
-		// Question not found
-		return -1;
-	}
-
-	// Checks if the question string is already in use
-	public boolean isQuestionStringInUse(String prQuestionString) {
-		for (Question question : mQuestionList.values()) {
-			if (question.questionString().equals(prQuestionString)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	// Get question by name
-	public Question getQuestionByNameString(String prQuestionString) {
-		for (Question question : mQuestionList.values()) {
-			if (question.questionString() == prQuestionString) {
-				return question;
-			}
-		}
-		// Question not found
-		return null;
-	}
-
-	// Get the the requested question
-	public String getQuestionStringByID(int prQuestionID) {
-		if (mQuestionList.containsKey(prQuestionID))
-			return mQuestionList.get(prQuestionID).questionString();
-		else
-			return "";
-	}
+	/*
+	 * // Returns the question id for provided question name public int
+	 * getQuestionIDByString(String prQuestionString) { for (Question question :
+	 * mQuestionList.values()) { if
+	 * (question.questionString().equals(prQuestionString)) { return
+	 * question.questionID(); } }
+	 * 
+	 * // Question not found return -1; }
+	 * 
+	 * // Checks if the question string is already in use public boolean
+	 * isQuestionStringInUse(String prQuestionString) { for (Question question :
+	 * mQuestionList.values()) { if
+	 * (question.questionString().equals(prQuestionString)) { return true; } }
+	 * return false; }
+	 * 
+	 * 
+	 * // Get question by name public Question getQuestionByNameString(String
+	 * prQuestionString) { for (Question question : mQuestionList.values()) { if
+	 * (question.questionString() == prQuestionString) { return question; } } //
+	 * Question not found return null; }
+	 * 
+	 * // Get the the requested question public String getQuestionStringByID(int
+	 * prQuestionID) { if (mQuestionList.containsKey(prQuestionID)) return
+	 * mQuestionList.get(prQuestionID).questionString(); else return ""; }
+	 */
 
 	public HashMap<Integer, Question> questionList() {
 		return mQuestionList;
@@ -178,5 +146,23 @@ public class QuestionManager {
 
 	public void questionList(HashMap<Integer, Question> mQuestionList) {
 		this.mQuestionList = mQuestionList;
+	}
+
+	// Returns the next question in JSON format
+	public String getNextQuestion(String username) {
+		// Require a valid password to prevent other students from remotely
+		// logging out each other.
+		Question question = db.getNextQuestion(username);
+		
+		if (question != null) {
+			Gson gson = new Gson();
+			String jsonString = gson.toJson(question);
+
+			if (Constants.DEBUG)
+				System.out.println(jsonString);
+			return jsonString;
+		}
+
+		return "";
 	}
 }

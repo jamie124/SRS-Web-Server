@@ -2,6 +2,7 @@ package Database;
 
 import java.sql.*;
 
+import Question.Question;
 import Server.Constants;
 import Users.User;
 
@@ -91,7 +92,7 @@ public class DB {
 		try {
 			PreparedStatement ps = conn.prepareStatement(sqlStmt);
 			int index = 1;
-			
+
 			ps.setString(index++, user.userLogin());
 			ps.setString(index++, user.userFirstName());
 			ps.setString(index++, user.userLastName());
@@ -109,24 +110,24 @@ public class DB {
 			System.out.println("Added user: " + user.userLogin());
 	}
 
-	public void setUserLoginStatus(String username, int loginStatusFlag){
+	public void setUserLoginStatus(String username, int loginStatusFlag) {
 		String sqlStmt = "UPDATE users SET last_update=NOW(), login_status=? WHERE user_login=?";
-		
+
 		try {
 			PreparedStatement ps = conn.prepareStatement(sqlStmt);
-			
+
 			int index = 1;
-			
+
 			ps.setInt(index++, loginStatusFlag);
 			ps.setString(index, username);
-			
+
 			ps.execute();
-		} catch (SQLException ex){
+		} catch (SQLException ex) {
 			if (Constants.DEBUG)
 				System.out.println(ex.getMessage());
 		}
 	}
-	
+
 	public User getUser(String username) {
 		User user = null;
 		try {
@@ -134,7 +135,7 @@ public class DB {
 			PreparedStatement ps = conn.prepareStatement(sqlStmt);
 
 			int index = 1;
-			
+
 			ps.setString(index, username);
 
 			ResultSet results = ps.executeQuery();
@@ -156,5 +157,36 @@ public class DB {
 				System.out.println("Got user: " + user.userLogin());
 		}
 		return user;
+	}
+
+	public Question getNextQuestion(String prUsername) {
+		Question nextQuestion = null;
+		try {
+			String sqlStmt = "SELECT u.user_login, uq.rec_id, q.question_id, q.question_title, q.question_type, q.question_answer, q.possible_answer_one, "
+					+ "q.possible_answer_two, q.possible_answer_three, q.possible_answer_four "
+					+ "FROM users AS u, user_question AS uq, questions AS q "
+					+ "WHERE u.user_id = uq.user_id "
+					+ "AND q.question_id = uq.question_id " + "AND u.user_login=? " + "ORDER BY uq.rec_id LIMIT 1";
+
+			PreparedStatement ps = conn.prepareStatement(sqlStmt);
+
+			int index = 1;
+
+			ps.setString(index, prUsername);
+
+			ResultSet results = ps.executeQuery();
+
+			while (results.next()) {
+				nextQuestion = new Question(results.getInt("question_id"), results.getString("question_title"),
+						results.getString("question_type"), results.getString("possible_answer_one"),
+						results.getString("possible_answer_two"), results.getString("possible_answer_three"),
+						results.getString("possible_answer_four"), results.getString("question_answer"));
+			}
+
+		} catch (SQLException ex) {
+			if (Constants.DEBUG)
+				System.out.println(ex.getMessage());
+		}
+		return nextQuestion;
 	}
 }

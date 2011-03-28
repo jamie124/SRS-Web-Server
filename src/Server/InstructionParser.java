@@ -47,9 +47,10 @@ public class InstructionParser {
 				iNewInstructions.questionName(iCommand.replace("\"", ""));
 			}
 		}
-		executeInstructions(iNewInstructions);
+		//executeInstructions(iNewInstructions);
 	}
 
+	/*
 	// Executes the instructions
 	private void executeInstructions(Instruction prInstructions) {
 		// Sending instructions
@@ -61,7 +62,8 @@ public class InstructionParser {
 			stopReceivingResponses();
 		}
 	}
-
+*/
+	/*
 	// Instructions related to sending stuff
 	private void sendingInstructions(Instruction prInstructions) {
 		Question iQuestionToSend;
@@ -79,7 +81,9 @@ public class InstructionParser {
 			}
 		}
 	}
+	*/
 
+	/*
 	// Instructions for deleting a question
 	private void deleteInstructions(Instruction prInstructions) {
 		Question iQuestionToDelete;
@@ -94,7 +98,8 @@ public class InstructionParser {
 
 		mQuestionManager.sendQuestionListToTutors();
 	}
-
+	*/
+	
 	// Stop the server from receiving answers from students
 	private void stopReceivingResponses() {
 		mAnswerManager.receiveResponses(false);
